@@ -1,4 +1,7 @@
-import { gql } from "@/lib/graphql";
+"use client";
+
+import { useMemo } from "react";
+import { useGql } from "@/lib/useGql";
 import { formatUsd, formatNumber } from "@/lib/format";
 import type { TokenStats, BridgeTransfer } from "@/lib/types";
 
@@ -23,17 +26,18 @@ interface Props {
   excludeBridge?: string;
 }
 
+function Loading() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
+}
+
 function aggregateTransfersByToken(transfers: PeriodResponse["BridgeTransfer"]): TokenRow[] {
   const map = new Map<string, TokenRow>();
   for (const tx of transfers) {
     const sym = tx.tokenSymbol || "Unknown";
     const existing = map.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 };
     const usd = parseFloat(tx.amountUsd || "0");
-    if (tx.direction === "inflow") {
-      existing.inflow += usd;
-    } else {
-      existing.outflow += usd;
-    }
+    if (tx.direction === "inflow") existing.inflow += usd;
+    else existing.outflow += usd;
     existing.net = existing.inflow - existing.outflow;
     existing.transfers++;
     map.set(sym, existing);
@@ -41,42 +45,33 @@ function aggregateTransfersByToken(transfers: PeriodResponse["BridgeTransfer"]):
   return Array.from(map.values()).sort((a, b) => b.transfers - a.transfers).slice(0, 15);
 }
 
-export async function TopTokens({ since, excludeBridge }: Props) {
-  let tokens: TokenRow[];
+export function TopTokens({ since, excludeBridge }: Props) {
+  const needsPeriod = since || excludeBridge;
 
-  if (since || excludeBridge) {
-    const conditions: string[] = [];
-    if (since) {
-      const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
-      conditions.push(`timestamp: { _gte: "${sinceTs}" }`);
-    }
-    if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
-    const where = `where: { ${conditions.join(", ")} }`;
+  const conditions: string[] = [];
+  if (since) {
+    const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
+    conditions.push(`timestamp: { _gte: "${sinceTs}" }`);
+  }
+  if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
+  const where = `where: { ${conditions.join(", ")} }`;
 
-    const data = await gql<PeriodResponse>(`{
-      BridgeTransfer(${where}) {
-        tokenSymbol
-        amountUsd
-        direction
-      }
-    }`);
-    tokens = aggregateTransfersByToken(data.BridgeTransfer);
-  } else {
-    const data = await gql<AllTimeResponse>(`{
-      TokenStats(where: { symbol: { _is_null: false } }, order_by: { transferCount: desc }, limit: 15) {
-        id
-        symbol
-        inflowVolumeUsd
-        outflowVolumeUsd
-        transferCount
-      }
-    }`);
-    tokens = data.TokenStats.filter((t) => t.symbol).map((t) => {
+  const periodQuery = `{ BridgeTransfer(${where}) { tokenSymbol amountUsd direction } }`;
+  const allTimeQuery = `{ TokenStats(where: { symbol: { _is_null: false } }, order_by: { transferCount: desc }, limit: 15) { id symbol inflowVolumeUsd outflowVolumeUsd transferCount } }`;
+
+  const { data, loading } = useGql<AllTimeResponse & PeriodResponse>(needsPeriod ? periodQuery : allTimeQuery);
+
+  const tokens = useMemo(() => {
+    if (!data) return [];
+    if (needsPeriod) return aggregateTransfersByToken(data.BridgeTransfer);
+    return data.TokenStats.filter((t) => t.symbol).map((t) => {
       const inflow = parseFloat(t.inflowVolumeUsd);
       const outflow = parseFloat(t.outflowVolumeUsd);
       return { symbol: t.symbol!, inflow, outflow, net: inflow - outflow, transfers: t.transferCount };
     });
-  }
+  }, [data, needsPeriod]);
+
+  if (loading) return <Loading />;
 
   return (
     <section>

@@ -1,4 +1,7 @@
-import { gql } from "@/lib/graphql";
+"use client";
+
+import { useMemo } from "react";
+import { useGql } from "@/lib/useGql";
 import { formatUsd, formatNumber } from "@/lib/format";
 import type { GlobalStats, BridgeDailyStats } from "@/lib/types";
 
@@ -15,52 +18,41 @@ interface Props {
   excludeBridge?: string;
 }
 
-async function fetchGlobal() {
-  const data = await gql<StatsResponse>(`{
-    GlobalStats(where: { id: { _eq: "global" } }) {
-      totalInflowUsd
-      totalOutflowUsd
-      totalTransfers
-    }
-  }`);
-  const stats = data.GlobalStats[0];
-  if (!stats) return null;
-  return {
-    inflow: parseFloat(stats.totalInflowUsd),
-    outflow: parseFloat(stats.totalOutflowUsd),
-    transfers: stats.totalTransfers,
-  };
+function Loading() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-28 animate-pulse" />;
 }
 
-async function fetchFromDaily(since?: string, excludeBridge?: string) {
+export function GlobalSummary({ since, excludeBridge }: Props) {
+  const needsDaily = since || excludeBridge;
+
   const conditions: string[] = [];
   if (since) conditions.push(`date: { _gte: "${since}" }`);
   if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
   const where = `(where: { ${conditions.join(", ")} })`;
 
-  const data = await gql<DailyResponse>(`{
-    BridgeDailyStats${where} {
-      inflowVolumeUsd
-      outflowVolumeUsd
-      inflowCount
-      outflowCount
-    }
-  }`);
-  let inflow = 0;
-  let outflow = 0;
-  let transfers = 0;
-  for (const day of data.BridgeDailyStats) {
-    inflow += parseFloat(day.inflowVolumeUsd);
-    outflow += parseFloat(day.outflowVolumeUsd);
-    transfers += day.inflowCount + day.outflowCount;
-  }
-  return { inflow, outflow, transfers };
-}
+  const dailyQuery = `{ BridgeDailyStats${where} { inflowVolumeUsd outflowVolumeUsd inflowCount outflowCount } }`;
+  const globalQuery = `{ GlobalStats(where: { id: { _eq: "global" } }) { totalInflowUsd totalOutflowUsd totalTransfers } }`;
 
-export async function GlobalSummary({ since, excludeBridge }: Props) {
-  const needsDaily = since || excludeBridge;
-  const stats = needsDaily ? await fetchFromDaily(since, excludeBridge) : await fetchGlobal();
-  if (!stats) return null;
+  const query = needsDaily ? dailyQuery : globalQuery;
+  const { data, loading } = useGql<StatsResponse & DailyResponse>(query);
+
+  const stats = useMemo(() => {
+    if (!data) return null;
+    if (needsDaily) {
+      let inflow = 0, outflow = 0, transfers = 0;
+      for (const day of data.BridgeDailyStats) {
+        inflow += parseFloat(day.inflowVolumeUsd);
+        outflow += parseFloat(day.outflowVolumeUsd);
+        transfers += day.inflowCount + day.outflowCount;
+      }
+      return { inflow, outflow, transfers };
+    }
+    const s = data.GlobalStats?.[0];
+    if (!s) return null;
+    return { inflow: parseFloat(s.totalInflowUsd), outflow: parseFloat(s.totalOutflowUsd), transfers: s.totalTransfers };
+  }, [data, needsDaily]);
+
+  if (loading || !stats) return <Loading />;
 
   const { inflow, outflow, transfers } = stats;
   const netFlow = inflow - outflow;

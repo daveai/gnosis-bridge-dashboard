@@ -1,28 +1,16 @@
-import { gql } from "@/lib/graphql";
+"use client";
+
+import { useMemo } from "react";
+import { useGql } from "@/lib/useGql";
 import { formatUsd, formatNumber } from "@/lib/format";
 import type { ChainPairStats, BridgeTransfer } from "@/lib/types";
 
 const CHAIN_NAMES: Record<number, string> = {
-  1: "Ethereum",
-  10: "Optimism",
-  56: "BNB Chain",
-  100: "Gnosis",
-  137: "Polygon",
-  250: "Fantom",
-  324: "zkSync Era",
-  8453: "Base",
-  42161: "Arbitrum One",
-  42220: "Celo",
-  43114: "Avalanche",
-  59144: "Linea",
-  534352: "Scroll",
-  7565164: "Solana",
-  100000014: "Sonic",
-  100000017: "Abstract",
-  100000019: "Cronos",
-  100000022: "HyperEVM",
-  100000026: "Tron",
-  100000030: "Monad",
+  1: "Ethereum", 10: "Optimism", 56: "BNB Chain", 100: "Gnosis", 137: "Polygon",
+  250: "Fantom", 324: "zkSync Era", 8453: "Base", 42161: "Arbitrum One", 42220: "Celo",
+  43114: "Avalanche", 59144: "Linea", 534352: "Scroll", 7565164: "Solana",
+  100000014: "Sonic", 100000017: "Abstract", 100000019: "Cronos", 100000022: "HyperEVM",
+  100000026: "Tron", 100000030: "Monad",
 };
 
 interface AllTimeResponse {
@@ -52,6 +40,10 @@ interface Props {
   excludeBridge?: string;
 }
 
+function Loading() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
+}
+
 function aggregateTransfersByRoute(transfers: PeriodTransfer[]): FlowRow[] {
   const map = new Map<string, FlowRow>();
   for (const tx of transfers) {
@@ -61,8 +53,7 @@ function aggregateTransfersByRoute(transfers: PeriodTransfer[]): FlowRow[] {
       id: key,
       sourceName: CHAIN_NAMES[tx.sourceChainId] || `Chain ${tx.sourceChainId}`,
       destName: CHAIN_NAMES[tx.destChainId] || `Chain ${tx.destChainId}`,
-      volume: 0,
-      transfers: 0,
+      volume: 0, transfers: 0,
     };
     existing.volume += parseFloat(tx.amountUsd || "0");
     existing.transfers++;
@@ -71,44 +62,35 @@ function aggregateTransfersByRoute(transfers: PeriodTransfer[]): FlowRow[] {
   return Array.from(map.values()).sort((a, b) => b.volume - a.volume).slice(0, 15);
 }
 
-export async function ChainFlows({ since, excludeBridge }: Props) {
-  let rows: FlowRow[];
+export function ChainFlows({ since, excludeBridge }: Props) {
+  const needsPeriod = since || excludeBridge;
 
-  if (since || excludeBridge) {
-    const conditions: string[] = [];
-    if (since) {
-      const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
-      conditions.push(`timestamp: { _gte: "${sinceTs}" }`);
-    }
-    if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
-    const where = `where: { ${conditions.join(", ")} }`;
+  const conditions: string[] = [];
+  if (since) {
+    const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
+    conditions.push(`timestamp: { _gte: "${sinceTs}" }`);
+  }
+  if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
+  const where = `where: { ${conditions.join(", ")} }`;
 
-    const data = await gql<PeriodResponse>(`{
-      BridgeTransfer(${where}) {
-        sourceChainId
-        destChainId
-        amountUsd
-      }
-    }`);
-    rows = aggregateTransfersByRoute(data.BridgeTransfer);
-  } else {
-    const data = await gql<AllTimeResponse>(`{
-      ChainPairStats(where: { sourceChainId: { _neq: 0 }, destChainId: { _neq: 0 } }, order_by: { totalVolumeUsd: desc }, limit: 15) {
-        id
-        sourceChainName
-        destChainName
-        totalVolumeUsd
-        transferCount
-      }
-    }`);
-    rows = data.ChainPairStats.map((cp) => ({
+  const periodQuery = `{ BridgeTransfer(${where}) { sourceChainId destChainId amountUsd } }`;
+  const allTimeQuery = `{ ChainPairStats(where: { sourceChainId: { _neq: 0 }, destChainId: { _neq: 0 } }, order_by: { totalVolumeUsd: desc }, limit: 15) { id sourceChainName destChainName totalVolumeUsd transferCount } }`;
+
+  const { data, loading } = useGql<AllTimeResponse & PeriodResponse>(needsPeriod ? periodQuery : allTimeQuery);
+
+  const rows = useMemo(() => {
+    if (!data) return [];
+    if (needsPeriod) return aggregateTransfersByRoute(data.BridgeTransfer);
+    return data.ChainPairStats.map((cp) => ({
       id: cp.id,
       sourceName: cp.sourceChainName || "Unknown",
       destName: cp.destChainName || "Unknown",
       volume: parseFloat(cp.totalVolumeUsd),
       transfers: cp.transferCount,
     }));
-  }
+  }, [data, needsPeriod]);
+
+  if (loading) return <Loading />;
 
   return (
     <section>

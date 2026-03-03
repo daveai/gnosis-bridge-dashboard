@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSummary } from "@/components/GlobalSummary";
@@ -10,10 +13,6 @@ import { ChainSankey } from "@/components/ChainSankey";
 import { RecentTransfers } from "@/components/RecentTransfers";
 import { PeriodSelector } from "@/components/PeriodSelector";
 
-function SectionSkeleton() {
-  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
-}
-
 type Period = "7d" | "30d" | "all";
 
 function computeSince(period: Period): string | undefined {
@@ -24,22 +23,62 @@ function computeSince(period: Period): string | undefined {
   return d.toISOString().split("T")[0];
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ period?: string; hideOmni?: string }>;
-}) {
-  const params = await searchParams;
-  const period = (["7d", "30d", "all"].includes(params.period!) ? params.period : "all") as Period;
-  const since = computeSince(period);
-  const excludeBridge = params.hideOmni === "1" ? "omnibridge" : undefined;
+function SectionSkeleton() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
+}
 
+function Dashboard() {
+  const searchParams = useSearchParams();
+  const periodParam = searchParams.get("period") || "all";
+  const period = (["7d", "30d", "all"].includes(periodParam) ? periodParam : "all") as Period;
+  const since = computeSince(period);
+  const excludeBridge = searchParams.get("hideOmni") === "1" ? "omnibridge" : undefined;
+
+  return (
+    <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <ErrorBoundary>
+        <GlobalSummary since={since} excludeBridge={excludeBridge} />
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <TopBridges since={since} excludeBridge={excludeBridge} />
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <VolumeOverTime since={since} excludeBridge={excludeBridge} />
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <ChainSankey since={since} excludeBridge={excludeBridge} />
+      </ErrorBoundary>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        <ErrorBoundary>
+          <TopTokens since={since} excludeBridge={excludeBridge} />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <ChainFlows since={since} excludeBridge={excludeBridge} />
+        </ErrorBoundary>
+      </div>
+
+      <ErrorBoundary>
+        <RecentTransfers />
+      </ErrorBoundary>
+
+      <footer className="text-center text-text-muted text-xs py-8 border-t border-border">
+        Gnosis Chain Bridge Analytics — Powered by Envio
+      </footer>
+    </main>
+  );
+}
+
+export default function Home() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Image
-            src="/logos/noca-wordmark-white.svg"
+            src="/gnosis-bridge-dashboard/logos/noca-wordmark-white.svg"
             alt="Noca"
             width={80}
             height={22}
@@ -49,59 +88,16 @@ export default async function Home({
           <span className="text-text-secondary text-sm font-medium">Gnosis Bridges</span>
         </div>
         <div className="flex items-center gap-4">
-          <PeriodSelector />
+          <Suspense>
+            <PeriodSelector />
+          </Suspense>
           <span className="text-text-muted text-xs font-mono">Live</span>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <ErrorBoundary>
-          <Suspense fallback={<SectionSkeleton />}>
-            <GlobalSummary since={since} excludeBridge={excludeBridge} />
-          </Suspense>
-        </ErrorBoundary>
-
-        <ErrorBoundary>
-          <Suspense fallback={<SectionSkeleton />}>
-            <TopBridges since={since} excludeBridge={excludeBridge} />
-          </Suspense>
-        </ErrorBoundary>
-
-        <ErrorBoundary>
-          <Suspense fallback={<SectionSkeleton />}>
-            <VolumeOverTime since={since} excludeBridge={excludeBridge} />
-          </Suspense>
-        </ErrorBoundary>
-
-        <ErrorBoundary>
-          <Suspense fallback={<SectionSkeleton />}>
-            <ChainSankey since={since} excludeBridge={excludeBridge} />
-          </Suspense>
-        </ErrorBoundary>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <ErrorBoundary>
-            <Suspense fallback={<SectionSkeleton />}>
-              <TopTokens since={since} excludeBridge={excludeBridge} />
-            </Suspense>
-          </ErrorBoundary>
-          <ErrorBoundary>
-            <Suspense fallback={<SectionSkeleton />}>
-              <ChainFlows since={since} excludeBridge={excludeBridge} />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
-
-        <ErrorBoundary>
-          <Suspense fallback={<SectionSkeleton />}>
-            <RecentTransfers />
-          </Suspense>
-        </ErrorBoundary>
-
-        <footer className="text-center text-text-muted text-xs py-8 border-t border-border">
-          Gnosis Chain Bridge Analytics — Powered by Envio
-        </footer>
-      </main>
+      <Suspense fallback={<SectionSkeleton />}>
+        <Dashboard />
+      </Suspense>
     </div>
   );
 }

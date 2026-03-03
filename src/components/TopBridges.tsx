@@ -1,4 +1,7 @@
-import { gql } from "@/lib/graphql";
+"use client";
+
+import { useMemo } from "react";
+import { useGql } from "@/lib/useGql";
 import { formatUsd, formatNumber, bridgeDisplayName } from "@/lib/format";
 import type { BridgeDailyStats, BridgeSummary } from "@/lib/types";
 import { BridgeBarChart } from "./charts/BridgeBarChart";
@@ -12,18 +15,14 @@ interface Props {
   excludeBridge?: string;
 }
 
+function Loading() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
+}
+
 function aggregateBridges(dailyStats: BridgeDailyStats[]): BridgeSummary[] {
   const map = new Map<string, BridgeSummary>();
-
   for (const day of dailyStats) {
-    const existing = map.get(day.bridge) || {
-      bridge: day.bridge,
-      inflowUsd: 0,
-      outflowUsd: 0,
-      totalUsd: 0,
-      inflowCount: 0,
-      outflowCount: 0,
-    };
+    const existing = map.get(day.bridge) || { bridge: day.bridge, inflowUsd: 0, outflowUsd: 0, totalUsd: 0, inflowCount: 0, outflowCount: 0 };
     existing.inflowUsd += parseFloat(day.inflowVolumeUsd);
     existing.outflowUsd += parseFloat(day.outflowVolumeUsd);
     existing.totalUsd = existing.inflowUsd + existing.outflowUsd;
@@ -31,27 +30,22 @@ function aggregateBridges(dailyStats: BridgeDailyStats[]): BridgeSummary[] {
     existing.outflowCount += day.outflowCount;
     map.set(day.bridge, existing);
   }
-
   return Array.from(map.values()).sort((a, b) => b.totalUsd - a.totalUsd);
 }
 
-export async function TopBridges({ since, excludeBridge }: Props) {
+export function TopBridges({ since, excludeBridge }: Props) {
   const conditions: string[] = [];
   if (since) conditions.push(`date: { _gte: "${since}" }`);
   if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
   const filter = conditions.length ? `(where: { ${conditions.join(", ")} })` : "";
 
-  const data = await gql<Response>(`{
-    BridgeDailyStats${filter} {
-      bridge
-      inflowVolumeUsd
-      outflowVolumeUsd
-      inflowCount
-      outflowCount
-    }
-  }`);
+  const { data, loading } = useGql<Response>(
+    `{ BridgeDailyStats${filter} { bridge inflowVolumeUsd outflowVolumeUsd inflowCount outflowCount } }`
+  );
 
-  const bridges = aggregateBridges(data.BridgeDailyStats);
+  const bridges = useMemo(() => data ? aggregateBridges(data.BridgeDailyStats) : [], [data]);
+
+  if (loading) return <Loading />;
 
   return (
     <section>

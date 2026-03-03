@@ -1,4 +1,6 @@
-import { gql } from "@/lib/graphql";
+"use client";
+
+import { useGql } from "@/lib/useGql";
 import { formatUsd, formatDate, bridgeDisplayName, shortenTxHash } from "@/lib/format";
 import type { BridgeTransfer } from "@/lib/types";
 
@@ -6,18 +8,16 @@ interface Response {
   BridgeTransfer: BridgeTransfer[];
 }
 
-export async function RecentTransfers() {
-  const data = await gql<Response>(`{
-    BridgeTransfer(order_by: { timestamp: desc }, limit: 20) {
-      id
-      bridge
-      direction
-      tokenSymbol
-      amountUsd
-      timestamp
-      txHash
-    }
-  }`);
+function Loading() {
+  return <div className="bg-surface-card border border-border rounded-lg p-5 h-48 animate-pulse" />;
+}
+
+export function RecentTransfers() {
+  const { data, loading } = useGql<Response>(
+    `{ BridgeTransfer(order_by: { timestamp: desc }, limit: 20) { id bridge direction tokenSymbol amountUsd timestamp txHash } }`
+  );
+
+  if (loading || !data) return <Loading />;
 
   return (
     <section>
