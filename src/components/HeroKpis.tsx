@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 import { formatUsd, formatNumber, isoDateNDaysAgo, median, formatSignedUsd } from '@/lib/format'
-import { TOTAL_CONFIGURED_BRIDGES } from '@/lib/types'
+import { TOTAL_CONFIGURED_BRIDGES, COVERAGE_START, type Period } from '@/lib/types'
 import { useHero } from '@/hooks/queryHooks'
 import { Sparkline } from './charts/Sparkline'
 import { Unavailable } from './Unavailable'
 
 interface Props {
   since?: string
-  period: '7d' | '30d' | 'all'
+  period: Period
 }
 
 function HeroSkeleton() {
@@ -23,8 +23,6 @@ function HeroSkeleton() {
     </div>
   )
 }
-
-const COVERAGE_START = '2026-04-07'
 
 export function HeroKpis({ since, period }: Props) {
   const sparkSince = useMemo(() => {

@@ -1,6 +1,6 @@
 import { formatUsd, formatNumber, bridgeDisplayName } from '@/lib/format'
 import { CHAIN_NAMES } from '@/lib/chains'
-import { useTopRoutes } from '@/hooks/queryHooks'
+import { useChainPairDaily } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
 import { Unavailable, EmptyLine } from './Unavailable'
 
@@ -24,12 +24,20 @@ function chainName(id: number): string {
 }
 
 export function TopRoutes({ since, excludeBridge }: Props) {
-  const { data, isError } = useTopRoutes({ since, excludeBridge })
+  const { data, isError } = useChainPairDaily({ since, excludeBridge })
 
   let rows: RouteRow[] = []
 
   if (data) {
-    const map = new Map<string, RouteRow & { byBridge: Map<string, number> }>()
+    interface Acc {
+      key: string
+      source: string
+      dest: string
+      volume: number
+      transfers: number
+      byBridge: Map<string, number>
+    }
+    const map = new Map<string, Acc>()
     for (const d of data.rows) {
       if (!d.sourceChainId || !d.destChainId) continue
       const key = `${d.sourceChainId}-${d.destChainId}`
@@ -39,8 +47,6 @@ export function TopRoutes({ since, excludeBridge }: Props) {
         dest: chainName(d.destChainId),
         volume: 0,
         transfers: 0,
-        topBridge: d.bridge,
-        topBridgeVolume: 0,
         byBridge: new Map<string, number>(),
       }
       const v = parseFloat(d.volumeUsd) || 0
@@ -49,22 +55,20 @@ export function TopRoutes({ since, excludeBridge }: Props) {
       e.byBridge.set(d.bridge, (e.byBridge.get(d.bridge) || 0) + v)
       map.set(key, e)
     }
-    for (const r of map.values()) {
-      let top = r.topBridge
-      let topV = 0
-      for (const [b, v] of r.byBridge.entries()) {
-        if (v > topV) {
-          top = b
-          topV = v
-        }
-      }
-      r.topBridge = top
-      r.topBridgeVolume = topV
-    }
     rows = Array.from(map.values())
       .sort((a, b) => b.volume - a.volume)
       .slice(0, 10)
-      .map(({ byBridge: _bb, ...rest }) => rest)
+      .map(({ byBridge, ...rest }) => {
+        let topBridge = ''
+        let topBridgeVolume = 0
+        for (const [b, v] of byBridge) {
+          if (v > topBridgeVolume) {
+            topBridge = b
+            topBridgeVolume = v
+          }
+        }
+        return { ...rest, topBridge, topBridgeVolume }
+      })
   }
 
   return (

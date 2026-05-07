@@ -14,8 +14,7 @@ import { MethodologyFooter } from '@/components/MethodologyFooter'
 import { PeriodSelector } from '@/components/PeriodSelector'
 import { IndexerHead } from '@/components/IndexerHead'
 import { isoDateNDaysAgo } from '@/lib/format'
-
-type Period = '7d' | '30d' | 'all'
+import { type Period } from '@/lib/types'
 
 function computeSince(period: Period): string | undefined {
   if (period === 'all') return undefined

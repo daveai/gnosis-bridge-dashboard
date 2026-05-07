@@ -1,9 +1,10 @@
 import { formatUsd, bridgeDisplayName, periodEditorialPrefix } from '@/lib/format'
+import { type Period } from '@/lib/types'
 import { useEditorialHeadline } from '@/hooks/queryHooks'
 
 interface Props {
   since?: string
-  period: '7d' | '30d' | 'all'
+  period: Period
 }
 
 export function EditorialHeadline({ since, period }: Props) {

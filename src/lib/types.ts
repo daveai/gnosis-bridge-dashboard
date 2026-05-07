@@ -114,3 +114,7 @@ export const ALL_BRIDGES = [
 export const TOTAL_CONFIGURED_BRIDGES = ALL_BRIDGES.length
 
 export const BRIDGE_FOOTNOTES: Record<string, string> = {}
+
+export type Period = '7d' | '30d' | 'all'
+
+export const COVERAGE_START = '2026-04-07'

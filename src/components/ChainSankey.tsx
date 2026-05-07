@@ -1,4 +1,4 @@
-import { useChainSankey } from '@/hooks/queryHooks'
+import { useChainPairDaily } from '@/hooks/queryHooks'
 import { CHAIN_NAMES } from '@/lib/chains'
 import { FlowSankey } from './charts/FlowSankey'
 import { SectionHeader } from './SectionHeader'
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function ChainSankey({ since, excludeBridge }: Props) {
-  const { data, isError } = useChainSankey({ since, excludeBridge })
+  const { data, isError } = useChainPairDaily({ since, excludeBridge })
 
   let inflows: ChainFlow[] = []
   let outflows: ChainFlow[] = []

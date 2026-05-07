@@ -57,11 +57,14 @@ interface IndexerHeadResp {
   BridgeTransfer: { timestamp: string }[]
 }
 
-function dailyWhere(params: SectionParams): string {
+function dailyWhere(params: SectionParams, opts?: { orderBy?: string }): string {
+  const args: string[] = []
   const cond: string[] = []
   if (params.since) cond.push(`date: { _gte: "${params.since}" }`)
   if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
-  return cond.length ? `(where: { ${cond.join(', ')} })` : ''
+  if (cond.length) args.push(`where: { ${cond.join(', ')} }`)
+  if (opts?.orderBy) args.push(`order_by: { ${opts.orderBy} }`)
+  return args.length ? `(${args.join(', ')})` : ''
 }
 
 function timestampCond(params: SectionParams, requireAmount: boolean): string[] {
@@ -207,13 +210,10 @@ export function useDailyVolume(params: SectionParams) {
   return useQuery<BridgeDailyStats[]>({
     queryKey: ['daily-volume', params],
     queryFn: async ({ signal }) => {
-      const cond: string[] = []
-      if (params.since) cond.push(`date: { _gte: "${params.since}" }`)
-      if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
-      const where = cond.length ? `where: { ${cond.join(', ')} }, ` : ''
+      const where = dailyWhere(params, { orderBy: 'date: asc' })
       const r = await gqlFetch<BridgeDailyResp>(
         `{
-          BridgeDailyStats(${where}order_by: { date: asc }) {
+          BridgeDailyStats${where} {
             bridge
             date
             inflowVolumeUsd
@@ -252,13 +252,13 @@ export function useTxSizes(params: SectionParams) {
   })
 }
 
-export interface ChainSankeyData {
+export interface ChainPairDailyData {
   rows: ChainPairDailyRow[]
 }
 
-export function useChainSankey(params: SectionParams) {
-  return useQuery<ChainSankeyData>({
-    queryKey: ['chain-sankey', params],
+export function useChainPairDaily(params: SectionParams) {
+  return useQuery<ChainPairDailyData>({
+    queryKey: ['chain-pair-daily', params],
     queryFn: async ({ signal }) => {
       const where = dailyWhere(params)
       const r = await gqlFetch<ChainPairDailyResp>(
@@ -304,34 +304,6 @@ export function useTopTokens(params: SectionParams) {
         signal,
       )
       return { rows: r.BridgeTokenDailyStats }
-    },
-  })
-}
-
-export interface TopRoutesData {
-  rows: ChainPairDailyRow[]
-}
-
-export function useTopRoutes(params: SectionParams) {
-  return useQuery<TopRoutesData>({
-    queryKey: ['top-routes', params],
-    queryFn: async ({ signal }) => {
-      const where = dailyWhere(params)
-      const r = await gqlFetch<ChainPairDailyResp>(
-        `{
-          ChainPairDailyStats${where} {
-            bridge
-            date
-            sourceChainId
-            destChainId
-            volumeUsd
-            transferCount
-          }
-        }`,
-        undefined,
-        signal,
-      )
-      return { rows: r.ChainPairDailyStats }
     },
   })
 }

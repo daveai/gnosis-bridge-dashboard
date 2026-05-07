@@ -7,13 +7,11 @@ import {
   median,
   isoDateNDaysAgo,
 } from '@/lib/format'
-import { type BridgeDailyStats, type BridgeSummary } from '@/lib/types'
+import { type BridgeDailyStats, type BridgeSummary, type Period } from '@/lib/types'
 import { useTopBridges } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
 import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable } from './Unavailable'
-
-type Period = '7d' | '30d' | 'all'
 
 interface Props {
   since?: string
@@ -33,9 +31,8 @@ function aggregate(
   wowEnabled: boolean,
 ): BridgeRow[] {
   const m = new Map<string, BridgeSummary & { recent7: number; prior7: number }>()
-  const today = new Date().toISOString().split('T')[0] ?? ''
-  // Recent 7-day window includes today: dates [today-6 ... today]. Prior 7-day
-  // window is the 7 dates before that: [today-13 ... today-7]. Symmetric counts.
+  // Recent 7-day window: [today-6 ... today]. Prior: [today-13 ... today-7].
+  const today = isoDateNDaysAgo(0)
   const recentCutoff = isoDateNDaysAgo(6)
   const priorCutoff = isoDateNDaysAgo(13)
 
@@ -63,7 +60,6 @@ function aggregate(
     e.netUsd = e.inflowUsd - e.outflowUsd
     if (wowEnabled) {
       const dayVol = inflow + outflow
-      // Recent 7d window: dates >= recentCutoff and <= today
       if (d.date >= recentCutoff && d.date <= today) {
         e.recent7 += dayVol
       } else if (d.date >= priorCutoff && d.date < recentCutoff) {
@@ -78,27 +74,9 @@ function aggregate(
     const sizes = (samples[v.bridge] ?? [])
       .map((s) => parseFloat(s.amountUsd || '0'))
       .filter((n) => n > 0)
-    const med = median(sizes)
-    let wowPct: number | null = null
-    if (wowEnabled) {
-      if (v.prior7 > 0) {
-        wowPct = ((v.recent7 - v.prior7) / v.prior7) * 100
-      } else if (v.recent7 > 0) {
-        wowPct = null
-      }
-    }
-    out.push({
-      bridge: v.bridge,
-      inflowUsd: v.inflowUsd,
-      outflowUsd: v.outflowUsd,
-      totalUsd: v.totalUsd,
-      netUsd: v.netUsd,
-      inflowCount: v.inflowCount,
-      outflowCount: v.outflowCount,
-      avgTicketUsd: v.avgTicketUsd,
-      medianTicketUsd: med,
-      wowPct,
-    })
+    const wowPct = wowEnabled && v.prior7 > 0 ? ((v.recent7 - v.prior7) / v.prior7) * 100 : null
+    const { recent7: _r, prior7: _p, ...summary } = v
+    out.push({ ...summary, medianTicketUsd: median(sizes), wowPct })
   }
   return out.sort((a, b) => {
     if (b.totalUsd !== a.totalUsd) return b.totalUsd - a.totalUsd
