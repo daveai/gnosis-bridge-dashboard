@@ -29,8 +29,7 @@ export function SmallMultipleSpark({ data, yMax }: Props) {
           type="monotone"
           dataKey="outflow"
           stroke="var(--color-outflow)"
-          strokeWidth={1.25}
-          strokeDasharray="2 2"
+          strokeWidth={1.5}
           dot={false}
           isAnimationActive={false}
         />

@@ -61,7 +61,7 @@ export function TxSizeDistribution({ since, excludeBridge }: Props) {
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Transfer sizes" />
+        <SectionHeader eyebrow="Ticket Distribution" />
         <Unavailable />
       </section>
     )
@@ -70,7 +70,7 @@ export function TxSizeDistribution({ since, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Transfer sizes" />
+        <SectionHeader eyebrow="Ticket Distribution" />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="h-[100px] bg-muted/40 animate-pulse rounded-sm" />
@@ -99,7 +99,7 @@ export function TxSizeDistribution({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Transfer sizes">
+      <SectionHeader eyebrow="Ticket Distribution">
         {globalMedian != null ? (
           <span className="text-[11px] text-muted-foreground">
             Global median <span className="num text-foreground">{formatUsd(globalMedian)}</span>

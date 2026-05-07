@@ -50,7 +50,7 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Daily volume">
+        <SectionHeader eyebrow="Volume Over Time">
           <InlineHideOmniToggle />
         </SectionHeader>
         <Unavailable />
@@ -61,7 +61,7 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Daily volume">
+        <SectionHeader eyebrow="Volume Over Time">
           <InlineHideOmniToggle />
         </SectionHeader>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
@@ -91,33 +91,32 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, v]) => ({ date, ...v }))
 
-  let globalYMax = 0
-  for (const s of ordered) {
-    for (const d of s.series) globalYMax = Math.max(globalYMax, d.inflow, d.outflow)
-  }
-  globalYMax = globalYMax || 1
-
   return (
     <section>
-      <SectionHeader eyebrow="Daily volume">
+      <SectionHeader eyebrow="Volume Over Time">
         <InlineHideOmniToggle />
       </SectionHeader>
       <div className="mb-6">
-        <p className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-2">
-          Daily totals
-        </p>
         <TotalsStrip data={totalsRows} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-        {ordered.map((s) => (
-          <div key={s.bridge} style={{ minHeight: 100 }}>
-            <div className="flex items-baseline justify-between mb-1">
-              <p className="text-xs text-foreground truncate pr-2">{bridgeDisplayName(s.bridge)}</p>
-              <p className="text-[11px] num text-muted-foreground">{formatUsd(s.total)}</p>
+        {ordered.map((s) => {
+          let cellMax = 0
+          for (const d of s.series) cellMax = Math.max(cellMax, d.inflow, d.outflow)
+          cellMax = cellMax || 1
+          return (
+            <div key={s.bridge} style={{ minHeight: 100 }}>
+              <div className="flex items-baseline justify-between mb-1">
+                <p className="text-xs text-foreground truncate pr-2">{bridgeDisplayName(s.bridge)}</p>
+                <p className="text-[11px] num text-muted-foreground">{formatUsd(s.total)}</p>
+              </div>
+              <SmallMultipleSpark data={s.series} yMax={cellMax} />
+              <p className="text-[9px] num text-muted-foreground mt-1">
+                peak {formatUsd(cellMax)}
+              </p>
             </div>
-            <SmallMultipleSpark data={s.series} yMax={globalYMax} />
-          </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )

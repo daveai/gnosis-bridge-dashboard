@@ -128,7 +128,7 @@ export function TopRoutes({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Routes" />
+      <SectionHeader eyebrow="Top Routes" />
       <div className="overflow-x-auto">
         {isError ? (
           <Unavailable />

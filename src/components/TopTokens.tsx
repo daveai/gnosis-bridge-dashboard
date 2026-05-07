@@ -1,4 +1,4 @@
-import { formatUsd, formatNumber, canonicalTokenSymbol } from '@/lib/format'
+import { formatUsd, formatNumber, canonicalTokenSymbol, assetClassColor } from '@/lib/format'
 import { useTopTokens } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
 import { Unavailable, EmptyLine } from './Unavailable'
@@ -66,7 +66,7 @@ export function TopTokens({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Tokens" />
+      <SectionHeader eyebrow="Token Mix" />
       <div className="overflow-x-auto">
         {isError ? (
           <Unavailable />
@@ -142,13 +142,3 @@ export function TopTokens({ since, excludeBridge }: Props) {
   )
 }
 
-function assetClassColor(symbol: string): string {
-  const s = symbol.toUpperCase()
-  if (['USDC', 'USDT', 'DAI', 'SDAI', 'EURE', 'GBPE', 'USDS', 'WXDAI', 'XDAI'].includes(s)) {
-    return 'var(--color-asset-stable)'
-  }
-  if (s === 'GNO') return 'var(--color-asset-gno)'
-  if (['WETH', 'ETH', 'WSTETH'].includes(s)) return 'var(--color-asset-eth)'
-  if (['WBTC', 'BTC'].includes(s)) return 'var(--color-asset-btc)'
-  return 'var(--color-asset-other)'
-}

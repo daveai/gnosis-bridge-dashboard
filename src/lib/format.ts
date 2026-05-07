@@ -82,6 +82,18 @@ export function canonicalTokenSymbol(symbol: string | null | undefined): string 
   return symbol
 }
 
+export function assetClassColor(symbol: string | null | undefined): string {
+  if (!symbol) return 'var(--color-asset-other)'
+  const s = symbol.toUpperCase()
+  if (['USDC', 'USDC.E', 'USDT', 'DAI', 'SDAI', 'EURE', 'GBPE', 'USDS', 'WXDAI', 'XDAI'].includes(s)) {
+    return 'var(--color-asset-stable)'
+  }
+  if (s === 'GNO') return 'var(--color-asset-gno)'
+  if (['WETH', 'ETH', 'WSTETH'].includes(s)) return 'var(--color-asset-eth)'
+  if (['WBTC', 'BTC'].includes(s)) return 'var(--color-asset-btc)'
+  return 'var(--color-asset-other)'
+}
+
 export function shortenTxHash(hash: string): string {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
 }

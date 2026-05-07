@@ -38,19 +38,26 @@ export function EditorialHeadline({ since }: Props) {
   const topShare = top && totalTwoWay > 0 ? (top.total / totalTwoWay) * 100 : 0
 
   const net = inflow - outflow
-  const direction = net >= 0 ? 'Net inflow' : 'Net outflow'
+  const netSign = net >= 0 ? '+' : '−'
   const netLabel = formatUsd(Math.abs(net))
+  const volumeLabel = formatUsd(totalTwoWay)
   const txLabel = transfers.toLocaleString('en-US')
 
   return (
     <p className="text-xl text-foreground leading-snug">
-      {direction} of <span className="num">{netLabel}</span> across{' '}
-      <span className="num">{txLabel}</span> transfers.
+      <span className="num">{volumeLabel}</span>{' '}
+      <span className="text-muted-foreground">moved across</span>{' '}
+      <span className="num">{txLabel}</span>{' '}
+      <span className="text-muted-foreground">transfers, net</span>{' '}
+      <span className="num">{netSign}{netLabel}</span>{' '}
+      <span className="text-muted-foreground">to Gnosis.</span>
       {top ? (
         <>
           {' '}
-          {bridgeDisplayName(top.bridge)} accounted for{' '}
-          <span className="num">{topShare.toFixed(0)}%</span> of two-way volume.
+          {bridgeDisplayName(top.bridge)}{' '}
+          <span className="text-muted-foreground">carried</span>{' '}
+          <span className="num">{topShare.toFixed(0)}%</span>{' '}
+          <span className="text-muted-foreground">of two-way volume.</span>
         </>
       ) : null}
     </p>

@@ -1,5 +1,5 @@
 import { formatUsd, formatNumber, bridgeDisplayName, median } from '@/lib/format'
-import { BRIDGE_FOOTNOTES, type BridgeDailyStats, type BridgeSummary } from '@/lib/types'
+import { type BridgeDailyStats, type BridgeSummary } from '@/lib/types'
 import { useTopBridges } from '@/hooks/queryHooks'
 import { BridgeDivergingBar } from './charts/BridgeDivergingBar'
 import { SectionHeader } from './SectionHeader'
@@ -44,7 +44,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridges by net flow">
+        <SectionHeader eyebrow="Bridge Activity">
           <InlineHideOmniToggle />
         </SectionHeader>
         <Unavailable />
@@ -55,7 +55,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridges by net flow">
+        <SectionHeader eyebrow="Bridge Activity">
           <InlineHideOmniToggle />
         </SectionHeader>
         <div className="bg-muted/40 h-72 animate-pulse rounded-sm" />
@@ -73,7 +73,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Bridges by net flow">
+      <SectionHeader eyebrow="Bridge Activity">
         <InlineHideOmniToggle />
       </SectionHeader>
       <div className="grid lg:grid-cols-2 gap-8">
@@ -83,39 +83,33 @@ export function TopBridges({ since, excludeBridge }: Props) {
             <thead>
               <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
                 <th className="text-left pb-3">Bridge</th>
+                <th className="text-right pb-3">Volume</th>
                 <th className="text-right pb-3">Net flow</th>
                 <th className="text-right pb-3">Median ticket</th>
                 <th className="text-right pb-3">Tx count</th>
               </tr>
             </thead>
             <tbody>
-              {bridges.map((b) => {
-                const footnote = BRIDGE_FOOTNOTES[b.bridge]
-                return (
-                  <tr key={b.bridge} className="border-b border-border/50">
-                    <td className="py-2.5">
-                      <div>{bridgeDisplayName(b.bridge)}</div>
-                      {footnote ? (
-                        <div className="text-[10px] italic text-muted-foreground mt-0.5">
-                          {footnote}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td
-                      className={`py-2.5 text-right num ${b.netUsd >= 0 ? 'text-petrol-light' : 'text-coral'}`}
-                    >
-                      {b.netUsd >= 0 ? '+' : ''}
-                      {formatUsd(b.netUsd)}
-                    </td>
-                    <td className="py-2.5 text-right num text-muted-foreground">
-                      {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : '—'}
-                    </td>
-                    <td className="py-2.5 text-right num text-muted-foreground">
-                      {formatNumber(b.inflowCount + b.outflowCount)}
-                    </td>
-                  </tr>
-                )
-              })}
+              {bridges.map((b) => (
+                <tr key={b.bridge} className="border-b border-border/50">
+                  <td className="py-2.5">{bridgeDisplayName(b.bridge)}</td>
+                  <td className="py-2.5 text-right num text-muted-foreground">
+                    {formatUsd(b.totalUsd)}
+                  </td>
+                  <td
+                    className={`py-2.5 text-right num ${b.netUsd >= 0 ? 'text-petrol-light' : 'text-coral'}`}
+                  >
+                    {b.netUsd >= 0 ? '+' : ''}
+                    {formatUsd(b.netUsd)}
+                  </td>
+                  <td className="py-2.5 text-right num text-muted-foreground">
+                    {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : '—'}
+                  </td>
+                  <td className="py-2.5 text-right num text-muted-foreground">
+                    {formatNumber(b.inflowCount + b.outflowCount)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

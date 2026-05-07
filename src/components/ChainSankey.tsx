@@ -132,7 +132,7 @@ export function ChainSankey({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Source and destination chains">
+      <SectionHeader eyebrow="Chain Routing">
         <InlineHideOmniToggle />
       </SectionHeader>
       <div>

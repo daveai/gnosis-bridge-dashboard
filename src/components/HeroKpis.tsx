@@ -81,7 +81,6 @@ export function HeroKpis({ since }: Props) {
             height={48}
           />
         </div>
-        <p className="text-muted-foreground text-[11px] mt-1">30-day net flow</p>
       </div>
 
       <div className="lg:col-span-2 grid grid-cols-2 gap-x-8 gap-y-6">

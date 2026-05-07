@@ -1,4 +1,4 @@
-import { formatUsd, formatDate, bridgeDisplayName, shortenTxHash } from '@/lib/format'
+import { formatUsd, formatDate, bridgeDisplayName, shortenTxHash, assetClassColor } from '@/lib/format'
 import { useRecentTransfers } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
 import { Unavailable, EmptyLine } from './Unavailable'
@@ -8,7 +8,7 @@ export function RecentTransfers() {
 
   return (
     <section>
-      <SectionHeader eyebrow="Latest transfers" />
+      <SectionHeader eyebrow="Recent Transfers" />
       <div className="overflow-x-auto">
         {isError ? (
           <Unavailable />
@@ -41,7 +41,15 @@ export function RecentTransfers() {
                     <td className={`py-2.5 ${inflow ? 'text-petrol-light' : 'text-coral'}`}>
                       {inflow ? 'Inflow' : 'Outflow'}
                     </td>
-                    <td className="py-2.5 font-mono">{tx.tokenSymbol || '?'}</td>
+                    <td className="py-2.5">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: assetClassColor(tx.tokenSymbol) }}
+                        />
+                        <span className="font-mono">{tx.tokenSymbol || '?'}</span>
+                      </span>
+                    </td>
                     <td className="py-2.5 text-right num">{formatUsd(tx.amountUsd)}</td>
                     <td className="py-2.5 text-right text-muted-foreground">
                       {formatDate(tx.timestamp)}
