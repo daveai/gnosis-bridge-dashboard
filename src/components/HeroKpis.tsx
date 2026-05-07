@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { formatUsd, formatNumber, isoDateNDaysAgo, median, formatSignedUsd } from '@/lib/format'
 import { TOTAL_CONFIGURED_BRIDGES, COVERAGE_START, type Period } from '@/lib/types'
-import { useHero } from '@/hooks/queryHooks'
+import { useHero, useGlobalSample } from '@/hooks/queryHooks'
 import { Sparkline } from './charts/Sparkline'
 import { Unavailable } from './Unavailable'
 
@@ -31,6 +31,7 @@ export function HeroKpis({ since, period }: Props) {
     return COVERAGE_START
   }, [period])
   const { data, isLoading, isError } = useHero({ since, sparkSince })
+  const { data: sample } = useGlobalSample({ since })
 
   if (isLoading) return <HeroSkeleton />
   if (isError || !data) return <Unavailable height="h-40" />
@@ -61,7 +62,7 @@ export function HeroKpis({ since, period }: Props) {
   const sorted = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
   for (const [date, v] of sorted) sparkPoints.push({ date, value: v })
 
-  const sizes = data.sample.map((t) => parseFloat(t.amountUsd || '0')).filter((n) => n > 0)
+  const sizes = (sample ?? []).map((t) => parseFloat(t.amountUsd || '0')).filter((n) => n > 0)
   const medianTicket = median(sizes)
 
   const netColor = net >= 0 ? 'text-petrol-light' : 'text-coral'

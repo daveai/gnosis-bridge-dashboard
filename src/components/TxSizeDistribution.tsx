@@ -1,6 +1,6 @@
 import { bridgeDisplayName, formatUsd, median } from '@/lib/format'
 import { ALL_BRIDGES } from '@/lib/types'
-import { useTxSizes } from '@/hooks/queryHooks'
+import { useTxSizes, useGlobalSample } from '@/hooks/queryHooks'
 import { TxSizeHistogram } from './charts/TxSizeHistogram'
 import { SectionHeader } from './SectionHeader'
 import { Unavailable } from './Unavailable'
@@ -56,6 +56,7 @@ function formatAxis(logValue: number): string {
 
 export function TxSizeDistribution({ since }: Props) {
   const { data, isError } = useTxSizes({ since })
+  const { data: sample } = useGlobalSample({ since })
 
   if (isError) {
     return (
@@ -79,17 +80,22 @@ export function TxSizeDistribution({ since }: Props) {
     )
   }
 
-  const allSizes: number[] = []
+  const rangeSizes: number[] = []
   const perBridge = ALL_BRIDGES.map((b) => {
     const rows = data.perBridge[b] ?? []
     const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n: number) => n > 0)
-    allSizes.push(...sizes)
+    rangeSizes.push(...sizes)
     return { bridge: b, sizes, total: sizes.reduce((s: number, n: number) => s + n, 0) }
   })
 
-  const { logMin, logMax } = pickRange(allSizes)
+  const { logMin, logMax } = pickRange(rangeSizes)
   const span = logMax - logMin
-  const globalMedian = median(allSizes)
+  // Median is computed from the same activity-weighted sample the Hero uses,
+  // so the two displayed numbers always agree.
+  const globalSizes = (sample ?? [])
+    .map((r) => parseFloat(r.amountUsd || '0'))
+    .filter((n) => n > 0)
+  const globalMedian = median(globalSizes)
   const globalMedianLog =
     globalMedian != null && globalMedian > 0
       ? Math.floor(((Math.log10(globalMedian) - logMin) / span) * BIN_COUNT)

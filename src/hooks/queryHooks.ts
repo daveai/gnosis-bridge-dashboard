@@ -78,7 +78,6 @@ function timestampCond(params: SectionParams, requireAmount: boolean): string[] 
 export interface HeroData {
   daily: BridgeDailyStats[]
   spark: BridgeDailyStats[]
-  sample: { amountUsd: string | null }[]
   sparkSince: string
 }
 
@@ -115,22 +114,10 @@ export function useHero(params: { since?: string; sparkSince: string }) {
         signal,
       )
 
-      const tsCond = timestampCond({ since: params.since }, true)
-      const sampleP = gqlFetch<BridgeTransferSampleResp>(
-        `{
-          BridgeTransfer(where: { ${tsCond.join(', ')} }, limit: 2000) {
-            amountUsd
-          }
-        }`,
-        undefined,
-        signal,
-      )
-
-      const [daily, spark, sample] = await Promise.all([dailyP, sparkP, sampleP])
+      const [daily, spark] = await Promise.all([dailyP, sparkP])
       return {
         daily: daily.BridgeDailyStats,
         spark: spark.BridgeDailyStats,
-        sample: sample.BridgeTransfer,
         sparkSince: params.sparkSince,
       }
     },
@@ -141,6 +128,27 @@ export function useHero(params: { since?: string; sparkSince: string }) {
 export interface TopBridgesData {
   daily: BridgeDailyStats[]
   samples: Record<string, { amountUsd: string | null }[]>
+}
+
+// Activity-weighted sample of recent transfers — used wherever we display
+// a single "median ticket" so the number is consistent across sections.
+export function useGlobalSample(params: SectionParams) {
+  return useQuery<{ amountUsd: string | null }[]>({
+    queryKey: ['global-sample', params],
+    queryFn: async ({ signal }) => {
+      const tsCond = timestampCond(params, true)
+      const r = await gqlFetch<BridgeTransferSampleResp>(
+        `{
+          BridgeTransfer(where: { ${tsCond.join(', ')} }, limit: 2000) {
+            amountUsd
+          }
+        }`,
+        undefined,
+        signal,
+      )
+      return r.BridgeTransfer
+    },
+  })
 }
 
 export function useTopBridges(params: SectionParams) {
