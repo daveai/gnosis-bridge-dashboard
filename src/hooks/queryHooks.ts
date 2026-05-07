@@ -164,8 +164,7 @@ export function useTopBridges(params: SectionParams) {
       )
 
       const tsCond = timestampCond(params, true)
-      const bridges = ALL_BRIDGES.filter((b) => b !== params.excludeBridge)
-      const aliasParts = bridges.map(
+      const aliasParts = ALL_BRIDGES.map(
         (b, i) =>
           `b${i}: BridgeTransfer(where: { ${tsCond.join(', ')}, bridge: { _eq: "${b}" } }, limit: 1000) { amountUsd }`,
       )
@@ -173,7 +172,7 @@ export function useTopBridges(params: SectionParams) {
 
       const [daily, sample] = await Promise.all([dailyP, sampleP])
       const samples: Record<string, { amountUsd: string | null }[]> = {}
-      bridges.forEach((b, i) => {
+      ALL_BRIDGES.forEach((b, i) => {
         samples[b] = sample[`b${i}`] ?? []
       })
       return { daily: daily.BridgeDailyStats, samples }
@@ -212,14 +211,13 @@ export function useTxSizes(params: SectionParams) {
     queryKey: ['tx-sizes', params],
     queryFn: async ({ signal }) => {
       const tsCond = timestampCond(params, true)
-      const bridges = ALL_BRIDGES.filter((b) => b !== params.excludeBridge)
-      const aliasParts = bridges.map(
+      const aliasParts = ALL_BRIDGES.map(
         (b, i) =>
           `b${i}: BridgeTransfer(where: { ${tsCond.join(', ')}, bridge: { _eq: "${b}" } }, limit: 1000) { amountUsd }`,
       )
       const r = await gqlFetch<AliasedSampleResp>(`{ ${aliasParts.join('\n')} }`, undefined, signal)
       const perBridge: Record<string, { amountUsd: string | null }[]> = {}
-      bridges.forEach((b, i) => {
+      ALL_BRIDGES.forEach((b, i) => {
         perBridge[b] = r[`b${i}`] ?? []
       })
       return { perBridge }
