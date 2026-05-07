@@ -21,6 +21,10 @@ const persister = createSyncStoragePersister({
   throttleTime: 2_000,
 })
 
+// Bump when query response shapes change so stale cached data
+// from old schemas doesn't crash render.
+const CACHE_BUSTER = 'v2-aggregate-tables'
+
 export function App() {
   return (
     <PersistQueryClientProvider
@@ -28,6 +32,7 @@ export function App() {
       persistOptions={{
         persister,
         maxAge: 24 * 60 * 60 * 1000,
+        buster: CACHE_BUSTER,
       }}
     >
       <BrowserRouter>

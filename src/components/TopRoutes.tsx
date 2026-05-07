@@ -87,7 +87,7 @@ export function TopRoutes({ since, excludeBridge }: Props) {
               <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
                 <th className="text-left pb-3">Route</th>
                 <th className="text-right pb-3">Volume</th>
-                <th className="text-right pb-3">Tx</th>
+                <th className="text-right pb-3 pr-4">Tx</th>
                 <th className="text-left pb-3">Top bridge</th>
               </tr>
             </thead>
@@ -100,7 +100,7 @@ export function TopRoutes({ since, excludeBridge }: Props) {
                     <span>{r.dest}</span>
                   </td>
                   <td className="py-2.5 text-right num">{formatUsd(r.volume)}</td>
-                  <td className="py-2.5 text-right num text-muted-foreground">
+                  <td className="py-2.5 text-right num text-muted-foreground pr-4">
                     {formatNumber(r.transfers)}
                   </td>
                   <td className="py-2.5 text-left text-muted-foreground">
