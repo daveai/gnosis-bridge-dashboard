@@ -1,10 +1,27 @@
-import { gql } from "@/lib/graphql";
-import { formatUsd, formatNumber, bridgeDisplayName } from "@/lib/format";
-import type { BridgeDailyStats, BridgeSummary } from "@/lib/types";
-import { BridgeBarChart } from "./charts/BridgeBarChart";
+import { safeGql } from "@/lib/graphql";
+import {
+  formatUsd,
+  formatNumber,
+  bridgeDisplayName,
+  median,
+} from "@/lib/format";
+import {
+  ALL_BRIDGES,
+  BRIDGE_FOOTNOTES,
+  type BridgeDailyStats,
+  type BridgeSummary,
+} from "@/lib/types";
+import { BridgeDivergingBar } from "./charts/BridgeDivergingBar";
+import { SectionHeader } from "./SectionHeader";
+import { InlineHideOmniToggle } from "./PeriodSelector";
+import { Unavailable } from "./Unavailable";
 
-interface Response {
+interface DailyResp {
   BridgeDailyStats: BridgeDailyStats[];
+}
+
+interface SampleResp {
+  [alias: string]: { amountUsd: string | null }[];
 }
 
 interface Props {
@@ -12,37 +29,43 @@ interface Props {
   excludeBridge?: string;
 }
 
-function aggregateBridges(dailyStats: BridgeDailyStats[]): BridgeSummary[] {
-  const map = new Map<string, BridgeSummary>();
-
-  for (const day of dailyStats) {
-    const existing = map.get(day.bridge) || {
-      bridge: day.bridge,
+function aggregate(daily: BridgeDailyStats[]): BridgeSummary[] {
+  const m = new Map<string, BridgeSummary>();
+  for (const d of daily) {
+    const e = m.get(d.bridge) || {
+      bridge: d.bridge,
       inflowUsd: 0,
       outflowUsd: 0,
       totalUsd: 0,
+      netUsd: 0,
       inflowCount: 0,
       outflowCount: 0,
+      avgTicketUsd: 0,
+      medianTicketUsd: null,
     };
-    existing.inflowUsd += parseFloat(day.inflowVolumeUsd);
-    existing.outflowUsd += parseFloat(day.outflowVolumeUsd);
-    existing.totalUsd = existing.inflowUsd + existing.outflowUsd;
-    existing.inflowCount += day.inflowCount;
-    existing.outflowCount += day.outflowCount;
-    map.set(day.bridge, existing);
+    e.inflowUsd += parseFloat(d.inflowVolumeUsd) || 0;
+    e.outflowUsd += parseFloat(d.outflowVolumeUsd) || 0;
+    e.inflowCount += d.inflowCount;
+    e.outflowCount += d.outflowCount;
+    e.totalUsd = e.inflowUsd + e.outflowUsd;
+    e.netUsd = e.inflowUsd - e.outflowUsd;
+    const cnt = e.inflowCount + e.outflowCount;
+    e.avgTicketUsd = cnt > 0 ? e.totalUsd / cnt : 0;
+    m.set(d.bridge, e);
   }
-
-  return Array.from(map.values()).sort((a, b) => b.totalUsd - a.totalUsd);
+  return Array.from(m.values()).sort(
+    (a, b) => Math.abs(b.netUsd) - Math.abs(a.netUsd),
+  );
 }
 
 export async function TopBridges({ since, excludeBridge }: Props) {
-  const conditions: string[] = [];
-  if (since) conditions.push(`date: { _gte: "${since}" }`);
-  if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
-  const filter = conditions.length ? `(where: { ${conditions.join(", ")} })` : "";
+  const cond: string[] = [];
+  if (since) cond.push(`date: { _gte: "${since}" }`);
+  if (excludeBridge) cond.push(`bridge: { _neq: "${excludeBridge}" }`);
+  const where = cond.length ? `(where: { ${cond.join(", ")} })` : "";
 
-  const data = await gql<Response>(`{
-    BridgeDailyStats${filter} {
+  const dailyP = safeGql<DailyResp>(`{
+    BridgeDailyStats${where} {
       bridge
       inflowVolumeUsd
       outflowVolumeUsd
@@ -51,36 +74,101 @@ export async function TopBridges({ since, excludeBridge }: Props) {
     }
   }`);
 
-  const bridges = aggregateBridges(data.BridgeDailyStats);
+  const tsCond: string[] = [`amountUsd: { _is_null: false }`];
+  if (since) {
+    const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
+    tsCond.push(`timestamp: { _gte: "${sinceTs}" }`);
+  }
+  const aliasParts = ALL_BRIDGES.filter((b) => b !== excludeBridge).map(
+    (b, i) =>
+      `b${i}: BridgeTransfer(where: { ${tsCond.join(", ")}, bridge: { _eq: "${b}" } }, limit: 1000) { amountUsd }`,
+  );
+  const sampleQuery = `{ ${aliasParts.join("\n")} }`;
+  const sampleP = safeGql<SampleResp>(sampleQuery);
+
+  const [daily, sample] = await Promise.all([dailyP, sampleP]);
+
+  if (!daily.ok) {
+    return (
+      <section>
+        <SectionHeader eyebrow="Bridges, ranked by net flow">
+          <InlineHideOmniToggle />
+        </SectionHeader>
+        <div className="bg-surface-card border border-border rounded-lg p-5">
+          <Unavailable />
+        </div>
+      </section>
+    );
+  }
+
+  const bridges = aggregate(daily.data.BridgeDailyStats);
+
+  const medians = new Map<string, number | null>();
+  if (sample.ok) {
+    ALL_BRIDGES.filter((b) => b !== excludeBridge).forEach((b, i) => {
+      const rows = sample.data[`b${i}`] || [];
+      const sizes = rows
+        .map((r) => parseFloat(r.amountUsd || "0"))
+        .filter((n) => n > 0);
+      medians.set(b, median(sizes));
+    });
+  }
+
+  for (const b of bridges) {
+    b.medianTicketUsd = medians.get(b.bridge) ?? null;
+  }
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-4">Top Bridges by Volume</h2>
+      <SectionHeader eyebrow="Bridges, ranked by net flow">
+        <InlineHideOmniToggle />
+      </SectionHeader>
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-surface-card border border-border rounded-lg p-5">
-          <BridgeBarChart data={bridges.slice(0, 8)} />
+          <BridgeDivergingBar data={bridges} />
         </div>
         <div className="bg-surface-card border border-border rounded-lg p-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-text-muted text-xs uppercase tracking-wide border-b border-border">
-                <th className="text-left pb-3">Bridge</th>
-                <th className="text-right pb-3">Inflow</th>
-                <th className="text-right pb-3">Outflow</th>
-                <th className="text-right pb-3">Total</th>
-                <th className="text-right pb-3">Txns</th>
+              <tr className="text-text-muted text-[10px] uppercase tracking-[0.12em] border-b border-border">
+                <th className="text-left pb-3 font-medium">Bridge</th>
+                <th className="text-right pb-3 font-medium">Net flow</th>
+                <th className="text-right pb-3 font-medium">Avg ticket</th>
+                <th className="text-right pb-3 font-medium">Median ticket</th>
+                <th className="text-right pb-3 font-medium">Tx count</th>
               </tr>
             </thead>
             <tbody>
-              {bridges.map((b) => (
-                <tr key={b.bridge} className="border-b border-border/50">
-                  <td className="py-2.5 font-medium">{bridgeDisplayName(b.bridge)}</td>
-                  <td className="py-2.5 text-right font-mono text-inflow">{formatUsd(b.inflowUsd)}</td>
-                  <td className="py-2.5 text-right font-mono text-outflow">{formatUsd(b.outflowUsd)}</td>
-                  <td className="py-2.5 text-right font-mono">{formatUsd(b.totalUsd)}</td>
-                  <td className="py-2.5 text-right font-mono text-text-secondary">{formatNumber(b.inflowCount + b.outflowCount)}</td>
-                </tr>
-              ))}
+              {bridges.map((b) => {
+                const footnote = BRIDGE_FOOTNOTES[b.bridge];
+                return (
+                  <tr key={b.bridge} className="border-b border-border/50">
+                    <td className="py-2.5">
+                      <div className="font-medium">{bridgeDisplayName(b.bridge)}</div>
+                      {footnote ? (
+                        <div className="text-[10px] italic text-text-muted mt-0.5">
+                          {footnote}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td
+                      className={`py-2.5 text-right num ${b.netUsd >= 0 ? "text-petrol-light" : "text-coral"}`}
+                    >
+                      {b.netUsd >= 0 ? "+" : ""}
+                      {formatUsd(b.netUsd)}
+                    </td>
+                    <td className="py-2.5 text-right num text-text-secondary">
+                      {formatUsd(b.avgTicketUsd)}
+                    </td>
+                    <td className="py-2.5 text-right num text-text-secondary">
+                      {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : "—"}
+                    </td>
+                    <td className="py-2.5 text-right num text-text-secondary">
+                      {formatNumber(b.inflowCount + b.outflowCount)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
