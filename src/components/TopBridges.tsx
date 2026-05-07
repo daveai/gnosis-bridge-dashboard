@@ -126,10 +126,10 @@ export function TopBridges({ since, period }: Props) {
               <th className="text-left pb-3">Bridge</th>
               <th className="text-right pb-3">Volume</th>
               <th className="pb-3 w-[24%]">Share</th>
-              <th className="text-right pb-3">Median</th>
-              {wowEnabled ? <th className="text-right pb-3">WoW%</th> : null}
-              <th className="text-right pb-3">Net flow</th>
-              <th className="text-right pb-3">Transfers</th>
+              <th className="text-right pb-3 hidden md:table-cell">Median</th>
+              {wowEnabled ? <th className="text-right pb-3 hidden md:table-cell">WoW%</th> : null}
+              <th className="text-right pb-3 hidden sm:table-cell">Net flow</th>
+              <th className="text-right pb-3">Tx</th>
             </tr>
           </thead>
           <tbody>
@@ -157,18 +157,18 @@ export function TopBridges({ since, period }: Props) {
                       </span>
                     </div>
                   </td>
-                  <td className="py-2.5 text-right num font-mono text-muted-foreground">
+                  <td className="py-2.5 text-right num font-mono text-muted-foreground hidden md:table-cell">
                     {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : '—'}
                   </td>
                   {wowEnabled ? (
-                    <td className={`py-2.5 text-right num font-mono ${wowColor}`}>
+                    <td className={`py-2.5 text-right num font-mono hidden md:table-cell ${wowColor}`}>
                       {b.wowPct == null
                         ? '—'
                         : `${b.wowPct >= 0 ? '+' : ''}${formatPercent(b.wowPct, 0)}`}
                     </td>
                   ) : null}
                   <td
-                    className={`py-2.5 text-right num font-mono ${
+                    className={`py-2.5 text-right num font-mono hidden sm:table-cell ${
                       b.netUsd >= 0 ? 'text-foreground' : 'text-coral'
                     }`}
                   >
