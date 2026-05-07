@@ -25,11 +25,11 @@ export function RecentTransfers() {
             <thead>
               <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
                 <th className="text-left pb-3">Bridge</th>
-                <th className="text-left pb-3">Direction</th>
+                <th className="text-left pb-3 hidden sm:table-cell">Direction</th>
                 <th className="text-left pb-3">Token</th>
                 <th className="text-right pb-3">USD</th>
-                <th className="text-right pb-3">Time</th>
-                <th className="text-right pb-3">Tx</th>
+                <th className="text-right pb-3 hidden md:table-cell">Time</th>
+                <th className="text-right pb-3 hidden sm:table-cell">Tx</th>
               </tr>
             </thead>
             <tbody>
@@ -38,7 +38,9 @@ export function RecentTransfers() {
                 return (
                   <tr key={tx.id} className="border-b border-border/50">
                     <td className="py-2.5">{bridgeDisplayName(tx.bridge)}</td>
-                    <td className={`py-2.5 ${inflow ? 'text-petrol-light' : 'text-muted-foreground'}`}>
+                    <td
+                      className={`py-2.5 hidden sm:table-cell ${inflow ? 'text-petrol-light' : 'text-muted-foreground'}`}
+                    >
                       {inflow ? 'Inflow' : 'Outflow'}
                     </td>
                     <td className="py-2.5">
@@ -50,11 +52,15 @@ export function RecentTransfers() {
                         <span className="font-mono">{tx.tokenSymbol || '?'}</span>
                       </span>
                     </td>
-                    <td className="py-2.5 text-right num">{formatUsd(tx.amountUsd)}</td>
-                    <td className="py-2.5 text-right text-muted-foreground">
+                    <td
+                      className={`py-2.5 text-right num ${inflow ? 'text-petrol-light' : 'text-foreground'}`}
+                    >
+                      {formatUsd(tx.amountUsd)}
+                    </td>
+                    <td className="py-2.5 text-right text-muted-foreground hidden md:table-cell">
                       {formatDate(tx.timestamp)}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-right hidden sm:table-cell">
                       <a
                         href={`https://gnosisscan.io/tx/${tx.txHash}`}
                         target="_blank"
