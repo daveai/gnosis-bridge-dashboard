@@ -50,11 +50,11 @@ export function BridgesReport() {
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <HeroKpis since={since} />
+          <HeroKpis since={since} period={period} />
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TopBridges since={since} excludeBridge={excludeBridge} />
+          <TopBridges since={since} period={period} excludeBridge={excludeBridge} />
         </ErrorBoundary>
 
         <ErrorBoundary>

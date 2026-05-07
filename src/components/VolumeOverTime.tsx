@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatUsd, bridgeDisplayName } from '@/lib/format'
 import { ALL_BRIDGES, type BridgeDailyStats } from '@/lib/types'
 import { useDailyVolume } from '@/hooks/queryHooks'
@@ -5,6 +6,8 @@ import { SmallMultipleSpark, TotalsStrip } from './charts/SmallMultipleSpark'
 import { SectionHeader } from './SectionHeader'
 import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable } from './Unavailable'
+
+const VISIBLE_LIMIT = 8
 
 interface Props {
   since?: string
@@ -46,6 +49,7 @@ function buildSeries(rows: BridgeDailyStats[]): BridgeSeries[] {
 
 export function VolumeOverTime({ since, excludeBridge }: Props) {
   const { data, isError } = useDailyVolume({ since, excludeBridge })
+  const [showAll, setShowAll] = useState(false)
 
   if (isError) {
     return (
@@ -76,9 +80,12 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   const series = buildSeries(data)
   const seriesByBridge = new Map(series.map((s) => [s.bridge, s]))
 
-  const ordered = ALL_BRIDGES.filter((b) => b !== excludeBridge).map(
-    (b) => seriesByBridge.get(b) || { bridge: b, total: 0, series: [] },
-  )
+  const ordered = ALL_BRIDGES.filter((b) => b !== excludeBridge)
+    .map((b) => seriesByBridge.get(b) || { bridge: b, total: 0, series: [] })
+    .sort((a, b) => b.total - a.total)
+
+  const visible = showAll ? ordered : ordered.slice(0, VISIBLE_LIMIT)
+  const hiddenCount = ordered.length - VISIBLE_LIMIT
 
   const totalsMap = new Map<string, { inflow: number; outflow: number }>()
   for (const r of data) {
@@ -100,7 +107,7 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
         <TotalsStrip data={totalsRows} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-        {ordered.map((s) => {
+        {visible.map((s) => {
           let cellMax = 0
           for (const d of s.series) cellMax = Math.max(cellMax, d.inflow, d.outflow)
           cellMax = cellMax || 1
@@ -118,6 +125,17 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
           )
         })}
       </div>
+      {hiddenCount > 0 ? (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          >
+            {showAll ? 'Show fewer ▴' : `+ ${hiddenCount} more ▾`}
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }

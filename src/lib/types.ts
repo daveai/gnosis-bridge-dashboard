@@ -108,10 +108,9 @@ export const ALL_BRIDGES = [
   'bungee-v2',
   'rhino-fi',
   'gaszip',
-  'ccip',
   'near-intents',
 ] as const
 
-export const TOTAL_CONFIGURED_BRIDGES = 12
+export const TOTAL_CONFIGURED_BRIDGES = ALL_BRIDGES.length
 
 export const BRIDGE_FOOTNOTES: Record<string, string> = {}

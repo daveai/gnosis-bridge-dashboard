@@ -12,8 +12,9 @@ interface Props {
   outflows: ChainFlow[]
 }
 
-const INFLOW_COLOR = 'color-mix(in oklch, var(--color-inflow) 55%, transparent)'
-const OUTFLOW_COLOR = 'color-mix(in oklch, var(--color-outflow) 55%, transparent)'
+const FLOW_COLOR = 'var(--color-petrol-light)'
+const INFLOW_OPACITY = 0.65
+const OUTFLOW_OPACITY = 0.28
 const NODE_COLOR = 'var(--color-muted-foreground)'
 const GNOSIS_COLOR = 'var(--color-petrol-light)'
 
@@ -77,7 +78,6 @@ function CustomLink({
   payload,
 }: LinkProps) {
   const isInflow = payload.target.name === 'Gnosis'
-  const color = isInflow ? INFLOW_COLOR : OUTFLOW_COLOR
 
   return (
     <Layer>
@@ -93,7 +93,8 @@ function CustomLink({
            ${sourceX},${sourceY - linkWidth / 2}
           Z
         `}
-        fill={color}
+        fill={FLOW_COLOR}
+        fillOpacity={isInflow ? INFLOW_OPACITY : OUTFLOW_OPACITY}
         strokeWidth={0}
       />
     </Layer>
@@ -153,7 +154,10 @@ export function FlowSankey({ inflows, outflows }: Props) {
     <div className="flex flex-col items-center">
       <div className="flex justify-between w-full max-w-[900px] px-[130px] mb-1">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: INFLOW_COLOR }} />
+          <span
+            className="w-2 h-2 rounded-sm"
+            style={{ backgroundColor: FLOW_COLOR, opacity: INFLOW_OPACITY }}
+          />
           <span className="text-xs text-text-muted">
             Inflows <span className="font-mono">{formatUsd(totalInflow)}</span>
           </span>
@@ -162,7 +166,10 @@ export function FlowSankey({ inflows, outflows }: Props) {
           <span className="text-xs text-text-muted">
             Outflows <span className="font-mono">{formatUsd(totalOutflow)}</span>
           </span>
-          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: OUTFLOW_COLOR }} />
+          <span
+            className="w-2 h-2 rounded-sm"
+            style={{ backgroundColor: FLOW_COLOR, opacity: OUTFLOW_OPACITY }}
+          />
         </div>
       </div>
 

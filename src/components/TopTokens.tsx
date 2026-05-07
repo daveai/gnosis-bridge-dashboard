@@ -16,37 +16,16 @@ interface Props {
   excludeBridge?: string
 }
 
-function aggregateByToken(
-  rows: { tokenSymbol: string | null; amountUsd: string | null; direction: string }[],
-): TokenRow[] {
-  const m = new Map<string, TokenRow>()
-  for (const tx of rows) {
-    const sym = canonicalTokenSymbol(tx.tokenSymbol)
-    const e = m.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 }
-    const usd = parseFloat(tx.amountUsd || '0')
-    if (tx.direction === 'inflow') e.inflow += usd
-    else e.outflow += usd
-    e.net = e.inflow - e.outflow
-    e.transfers++
-    m.set(sym, e)
-  }
-  return Array.from(m.values())
-    .sort((a, b) => b.transfers - a.transfers)
-    .slice(0, 10)
-}
-
 export function TopTokens({ since, excludeBridge }: Props) {
   const { data, isError } = useTopTokens({ since, excludeBridge })
 
   let tokens: TokenRow[] = []
 
-  if (data?.kind === 'period') {
-    tokens = aggregateByToken(data.transfers)
-  } else if (data?.kind === 'all-time') {
+  if (data) {
     const merged = new Map<string, TokenRow>()
-    for (const t of data.tokens) {
-      if (!t.symbol) continue
-      const sym = canonicalTokenSymbol(t.symbol)
+    for (const t of data.rows) {
+      if (!t.tokenSymbol) continue
+      const sym = canonicalTokenSymbol(t.tokenSymbol)
       const inflow = parseFloat(t.inflowVolumeUsd) || 0
       const outflow = parseFloat(t.outflowVolumeUsd) || 0
       const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 }
@@ -117,9 +96,8 @@ export function TopTokens({ since, excludeBridge }: Props) {
                             className="h-full"
                             style={{
                               width: `${barPct}%`,
-                              backgroundColor: positive
-                                ? 'var(--color-inflow)'
-                                : 'var(--color-outflow)',
+                              backgroundColor: assetClassColor(t.symbol),
+                              opacity: positive ? 1 : 0.55,
                             }}
                           />
                         </div>

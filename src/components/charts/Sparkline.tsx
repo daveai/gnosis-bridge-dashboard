@@ -18,9 +18,10 @@ export function Sparkline({ data, color = 'var(--color-petrol-light)', height = 
           type="monotone"
           dataKey="value"
           stroke={color}
-          strokeWidth={1.5}
+          strokeWidth={1}
           dot={false}
           isAnimationActive={false}
+          fill="none"
         />
       </LineChart>
     </ResponsiveContainer>

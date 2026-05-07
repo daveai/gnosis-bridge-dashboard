@@ -1,4 +1,4 @@
-import { formatUsd, bridgeDisplayName } from '@/lib/format'
+import { formatUsd, bridgeDisplayName, periodEditorialPrefix } from '@/lib/format'
 import { useEditorialHeadline } from '@/hooks/queryHooks'
 
 interface Props {
@@ -6,7 +6,7 @@ interface Props {
   period: '7d' | '30d' | 'all'
 }
 
-export function EditorialHeadline({ since }: Props) {
+export function EditorialHeadline({ since, period }: Props) {
   const { data } = useEditorialHeadline({ since })
 
   if (!data) return null
@@ -45,6 +45,7 @@ export function EditorialHeadline({ since }: Props) {
 
   return (
     <p className="text-xl text-foreground leading-snug">
+      <span className="text-muted-foreground">{periodEditorialPrefix(period)}:</span>{' '}
       <span className="num">{volumeLabel}</span>{' '}
       <span className="text-muted-foreground">moved across</span>{' '}
       <span className="num">{txLabel}</span>{' '}

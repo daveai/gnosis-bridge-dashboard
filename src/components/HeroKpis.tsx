@@ -7,6 +7,7 @@ import { Unavailable } from './Unavailable'
 
 interface Props {
   since?: string
+  period: '7d' | '30d' | 'all'
 }
 
 function HeroSkeleton() {
@@ -23,8 +24,14 @@ function HeroSkeleton() {
   )
 }
 
-export function HeroKpis({ since }: Props) {
-  const sparkSince = useMemo(() => isoDateNDaysAgo(30), [])
+const COVERAGE_START = '2026-04-07'
+
+export function HeroKpis({ since, period }: Props) {
+  const sparkSince = useMemo(() => {
+    if (period === '7d') return isoDateNDaysAgo(7)
+    if (period === '30d') return isoDateNDaysAgo(30)
+    return COVERAGE_START
+  }, [period])
   const { data, isLoading, isError } = useHero({ since, sparkSince })
 
   if (isLoading) return <HeroSkeleton />
@@ -75,11 +82,7 @@ export function HeroKpis({ since }: Props) {
           <span className="num">{formatUsd(outflow)}</span> out
         </p>
         <div className="mt-4 -mx-1">
-          <Sparkline
-            data={sparkPoints}
-            color={net >= 0 ? 'var(--color-inflow)' : 'var(--color-outflow)'}
-            height={48}
-          />
+          <Sparkline data={sparkPoints} color="var(--color-petrol-light)" height={48} />
         </div>
       </div>
 

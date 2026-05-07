@@ -28,8 +28,9 @@ export function SmallMultipleSpark({ data, yMax }: Props) {
         <Line
           type="monotone"
           dataKey="outflow"
-          stroke="var(--color-outflow)"
-          strokeWidth={1.5}
+          stroke="var(--color-muted-foreground)"
+          strokeWidth={1.25}
+          strokeOpacity={0.7}
           dot={false}
           isAnimationActive={false}
         />
@@ -59,8 +60,9 @@ export function TotalsStrip({ data }: TotalsProps) {
         <Line
           type="monotone"
           dataKey="outflow"
-          stroke="var(--color-outflow)"
-          strokeWidth={1.5}
+          stroke="var(--color-muted-foreground)"
+          strokeWidth={1.25}
+          strokeOpacity={0.7}
           dot={false}
           isAnimationActive={false}
         />

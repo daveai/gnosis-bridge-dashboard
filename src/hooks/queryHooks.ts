@@ -4,8 +4,6 @@ import {
   ALL_BRIDGES,
   type BridgeDailyStats,
   type BridgeTransfer,
-  type ChainPairStats,
-  type TokenStats,
 } from '@/lib/types'
 
 interface SectionParams {
@@ -25,50 +23,30 @@ interface AliasedSampleResp {
   [alias: string]: { amountUsd: string | null }[]
 }
 
-interface ChainPairStatsResp {
-  ChainPairStats: ChainPairStats[]
-}
-
-interface ChainPairTransferRow {
-  direction: string
+export interface ChainPairDailyRow {
+  bridge: string
+  date: string
   sourceChainId: number
   destChainId: number
-  amountUsd: string | null
-}
-
-interface ChainPairTransferResp {
-  BridgeTransfer: ChainPairTransferRow[]
-}
-
-interface TokenStatsResp {
-  TokenStats: TokenStats[]
-}
-
-interface PeriodTokenResp {
-  BridgeTransfer: {
-    tokenSymbol: string | null
-    amountUsd: string | null
-    direction: string
-  }[]
+  volumeUsd: string
+  transferCount: number
 }
 
 interface ChainPairDailyResp {
-  ChainPairDailyStats: {
-    bridge: string
-    sourceChainId: number
-    destChainId: number
-    volumeUsd: string
-    transferCount: number
-  }[]
+  ChainPairDailyStats: ChainPairDailyRow[]
 }
 
-interface RouteFallbackResp {
-  BridgeTransfer: {
-    bridge: string
-    sourceChainId: number
-    destChainId: number
-    amountUsd: string | null
-  }[]
+export interface BridgeTokenDailyRow {
+  bridge: string
+  date: string
+  tokenSymbol: string | null
+  inflowVolumeUsd: string
+  outflowVolumeUsd: string
+  transferCount: number
+}
+
+interface BridgeTokenDailyResp {
+  BridgeTokenDailyStats: BridgeTokenDailyRow[]
 }
 
 interface RecentTransfersResp {
@@ -196,6 +174,7 @@ export function useTopBridges(params: SectionParams) {
         `{
           BridgeDailyStats${where} {
             bridge
+            date
             inflowVolumeUsd
             outflowVolumeUsd
             inflowCount
@@ -273,115 +252,20 @@ export function useTxSizes(params: SectionParams) {
   })
 }
 
-export type ChainSankeyData =
-  | { kind: 'period'; transfers: ChainPairTransferRow[] }
-  | { kind: 'all-time'; pairs: ChainPairStats[] }
+export interface ChainSankeyData {
+  rows: ChainPairDailyRow[]
+}
 
 export function useChainSankey(params: SectionParams) {
   return useQuery<ChainSankeyData>({
     queryKey: ['chain-sankey', params],
     queryFn: async ({ signal }) => {
-      if (params.since || params.excludeBridge) {
-        const cond: string[] = []
-        if (params.since) {
-          const sinceTs = Math.floor(new Date(params.since).getTime() / 1000).toString()
-          cond.push(`timestamp: { _gte: "${sinceTs}" }`)
-        }
-        if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
-        const where = `where: { ${cond.join(', ')} }`
-        const r = await gqlFetch<ChainPairTransferResp>(
-          `{
-            BridgeTransfer(${where}, limit: 5000) {
-              direction
-              sourceChainId
-              destChainId
-              amountUsd
-            }
-          }`,
-          undefined,
-          signal,
-        )
-        return { kind: 'period', transfers: r.BridgeTransfer }
-      }
-      const r = await gqlFetch<ChainPairStatsResp>(
-        `{
-          ChainPairStats {
-            sourceChainId
-            destChainId
-            sourceChainName
-            destChainName
-            totalVolumeUsd
-            transferCount
-          }
-        }`,
-        undefined,
-        signal,
-      )
-      return { kind: 'all-time', pairs: r.ChainPairStats }
-    },
-  })
-}
-
-export type TopTokensData =
-  | { kind: 'period'; transfers: PeriodTokenResp['BridgeTransfer'] }
-  | { kind: 'all-time'; tokens: TokenStats[] }
-
-export function useTopTokens(params: SectionParams) {
-  return useQuery<TopTokensData>({
-    queryKey: ['top-tokens', params],
-    queryFn: async ({ signal }) => {
-      if (params.since || params.excludeBridge) {
-        const cond: string[] = []
-        if (params.since) {
-          const sinceTs = Math.floor(new Date(params.since).getTime() / 1000).toString()
-          cond.push(`timestamp: { _gte: "${sinceTs}" }`)
-        }
-        if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
-        const where = `where: { ${cond.join(', ')} }`
-        const r = await gqlFetch<PeriodTokenResp>(
-          `{
-            BridgeTransfer(${where}, limit: 5000) {
-              tokenSymbol
-              amountUsd
-              direction
-            }
-          }`,
-          undefined,
-          signal,
-        )
-        return { kind: 'period', transfers: r.BridgeTransfer }
-      }
-      const r = await gqlFetch<TokenStatsResp>(
-        `{
-          TokenStats(where: { symbol: { _is_null: false } }, order_by: { transferCount: desc }, limit: 10) {
-            id
-            symbol
-            inflowVolumeUsd
-            outflowVolumeUsd
-            transferCount
-          }
-        }`,
-        undefined,
-        signal,
-      )
-      return { kind: 'all-time', tokens: r.TokenStats }
-    },
-  })
-}
-
-export type TopRoutesData =
-  | { kind: 'daily'; rows: ChainPairDailyResp['ChainPairDailyStats'] }
-  | { kind: 'fallback'; transfers: RouteFallbackResp['BridgeTransfer'] }
-
-export function useTopRoutes(params: SectionParams) {
-  return useQuery<TopRoutesData>({
-    queryKey: ['top-routes', params],
-    queryFn: async ({ signal }) => {
       const where = dailyWhere(params)
-      const dailyR = await gqlFetch<ChainPairDailyResp>(
+      const r = await gqlFetch<ChainPairDailyResp>(
         `{
           ChainPairDailyStats${where} {
             bridge
+            date
             sourceChainId
             destChainId
             volumeUsd
@@ -391,29 +275,63 @@ export function useTopRoutes(params: SectionParams) {
         undefined,
         signal,
       )
-      if (dailyR.ChainPairDailyStats?.length) {
-        return { kind: 'daily', rows: dailyR.ChainPairDailyStats }
-      }
-      const tsCond: string[] = []
-      if (params.since) {
-        const sinceTs = Math.floor(new Date(params.since).getTime() / 1000).toString()
-        tsCond.push(`timestamp: { _gte: "${sinceTs}" }`)
-      }
-      if (params.excludeBridge) tsCond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
-      const tsWhere = tsCond.length ? `where: { ${tsCond.join(', ')} }, ` : ''
-      const r = await gqlFetch<RouteFallbackResp>(
+      return { rows: r.ChainPairDailyStats }
+    },
+  })
+}
+
+export interface TopTokensData {
+  rows: BridgeTokenDailyRow[]
+}
+
+export function useTopTokens(params: SectionParams) {
+  return useQuery<TopTokensData>({
+    queryKey: ['top-tokens', params],
+    queryFn: async ({ signal }) => {
+      const where = dailyWhere(params)
+      const r = await gqlFetch<BridgeTokenDailyResp>(
         `{
-          BridgeTransfer(${tsWhere}limit: 5000) {
+          BridgeTokenDailyStats${where} {
             bridge
-            sourceChainId
-            destChainId
-            amountUsd
+            date
+            tokenSymbol
+            inflowVolumeUsd
+            outflowVolumeUsd
+            transferCount
           }
         }`,
         undefined,
         signal,
       )
-      return { kind: 'fallback', transfers: r.BridgeTransfer }
+      return { rows: r.BridgeTokenDailyStats }
+    },
+  })
+}
+
+export interface TopRoutesData {
+  rows: ChainPairDailyRow[]
+}
+
+export function useTopRoutes(params: SectionParams) {
+  return useQuery<TopRoutesData>({
+    queryKey: ['top-routes', params],
+    queryFn: async ({ signal }) => {
+      const where = dailyWhere(params)
+      const r = await gqlFetch<ChainPairDailyResp>(
+        `{
+          ChainPairDailyStats${where} {
+            bridge
+            date
+            sourceChainId
+            destChainId
+            volumeUsd
+            transferCount
+          }
+        }`,
+        undefined,
+        signal,
+      )
+      return { rows: r.ChainPairDailyStats }
     },
   })
 }

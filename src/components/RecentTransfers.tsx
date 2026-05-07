@@ -38,7 +38,7 @@ export function RecentTransfers() {
                 return (
                   <tr key={tx.id} className="border-b border-border/50">
                     <td className="py-2.5">{bridgeDisplayName(tx.bridge)}</td>
-                    <td className={`py-2.5 ${inflow ? 'text-petrol-light' : 'text-coral'}`}>
+                    <td className={`py-2.5 ${inflow ? 'text-petrol-light' : 'text-muted-foreground'}`}>
                       {inflow ? 'Inflow' : 'Outflow'}
                     </td>
                     <td className="py-2.5">

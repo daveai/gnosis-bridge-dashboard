@@ -59,11 +59,9 @@ export function bridgeDisplayName(bridge: string): string {
     'stargate-usdc': 'Stargate (USDC)',
     symbiosis: 'Symbiosis',
     relay: 'Relay',
-    bungee: 'Bungee',
     'bungee-v2': 'Bungee V2',
     'rhino-fi': 'rhino.fi',
     gaszip: 'GasZip',
-    ccip: 'Chainlink CCIP',
     'near-intents': 'NEAR Intents',
   }
   return names[bridge] || bridge

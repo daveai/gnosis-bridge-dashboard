@@ -1,30 +1,8 @@
 import { formatUsd, formatNumber, bridgeDisplayName } from '@/lib/format'
+import { CHAIN_NAMES } from '@/lib/chains'
 import { useTopRoutes } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
 import { Unavailable, EmptyLine } from './Unavailable'
-
-const CHAIN_NAMES: Record<number, string> = {
-  1: 'Ethereum',
-  10: 'Optimism',
-  56: 'BNB Chain',
-  100: 'Gnosis',
-  137: 'Polygon',
-  250: 'Fantom',
-  324: 'zkSync Era',
-  8453: 'Base',
-  42161: 'Arbitrum One',
-  42220: 'Celo',
-  43114: 'Avalanche',
-  59144: 'Linea',
-  534352: 'Scroll',
-  7565164: 'Solana',
-  100000014: 'Sonic',
-  100000017: 'Abstract',
-  100000019: 'Cronos',
-  100000022: 'HyperEVM',
-  100000026: 'Tron',
-  100000030: 'Monad',
-}
 
 interface RouteRow {
   key: string
@@ -50,7 +28,7 @@ export function TopRoutes({ since, excludeBridge }: Props) {
 
   let rows: RouteRow[] = []
 
-  if (data?.kind === 'daily') {
+  if (data) {
     const map = new Map<string, RouteRow & { byBridge: Map<string, number> }>()
     for (const d of data.rows) {
       if (!d.sourceChainId || !d.destChainId) continue
@@ -82,43 +60,6 @@ export function TopRoutes({ since, excludeBridge }: Props) {
       }
       r.topBridge = top
       r.topBridgeVolume = topV
-    }
-    rows = Array.from(map.values())
-      .sort((a, b) => b.volume - a.volume)
-      .slice(0, 10)
-      .map(({ byBridge: _bb, ...rest }) => rest)
-  } else if (data?.kind === 'fallback') {
-    const map = new Map<string, RouteRow & { byBridge: Map<string, number> }>()
-    for (const d of data.transfers) {
-      if (!d.sourceChainId || !d.destChainId) continue
-      const key = `${d.sourceChainId}-${d.destChainId}`
-      const e = map.get(key) || {
-        key,
-        source: chainName(d.sourceChainId),
-        dest: chainName(d.destChainId),
-        volume: 0,
-        transfers: 0,
-        topBridge: d.bridge,
-        topBridgeVolume: 0,
-        byBridge: new Map<string, number>(),
-      }
-      const v = parseFloat(d.amountUsd || '0')
-      e.volume += v
-      e.transfers += 1
-      e.byBridge.set(d.bridge, (e.byBridge.get(d.bridge) || 0) + v)
-      map.set(key, e)
-    }
-    for (const r2 of map.values()) {
-      let top = r2.topBridge
-      let topV = 0
-      for (const [b, v] of r2.byBridge.entries()) {
-        if (v > topV) {
-          top = b
-          topV = v
-        }
-      }
-      r2.topBridge = top
-      r2.topBridgeVolume = topV
     }
     rows = Array.from(map.values())
       .sort((a, b) => b.volume - a.volume)
