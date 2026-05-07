@@ -87,11 +87,17 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   const visible = showAll ? ordered : ordered.slice(0, VISIBLE_LIMIT)
   const hiddenCount = ordered.length - VISIBLE_LIMIT
 
+  let totalInflow = 0
+  let totalOutflow = 0
   const totalsMap = new Map<string, { inflow: number; outflow: number }>()
   for (const r of data) {
     const e = totalsMap.get(r.date) || { inflow: 0, outflow: 0 }
-    e.inflow += parseFloat(r.inflowVolumeUsd) || 0
-    e.outflow += parseFloat(r.outflowVolumeUsd) || 0
+    const i = parseFloat(r.inflowVolumeUsd) || 0
+    const o = parseFloat(r.outflowVolumeUsd) || 0
+    e.inflow += i
+    e.outflow += o
+    totalInflow += i
+    totalOutflow += o
     totalsMap.set(r.date, e)
   }
   const totalsRows = Array.from(totalsMap.entries())
@@ -103,6 +109,22 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
       <SectionHeader eyebrow="Volume Over Time">
         <InlineHideOmniToggle />
       </SectionHeader>
+      <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ backgroundColor: 'var(--color-inflow)' }}
+          />
+          Inflow <span className="num text-foreground">{formatUsd(totalInflow)}</span>
+        </span>
+        <span className="flex items-center gap-2">
+          Outflow <span className="num text-foreground">{formatUsd(totalOutflow)}</span>
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ backgroundColor: 'var(--color-muted-foreground)', opacity: 0.7 }}
+          />
+        </span>
+      </div>
       <div className="mb-6">
         <TotalsStrip data={totalsRows} />
       </div>
