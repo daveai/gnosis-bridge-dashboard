@@ -53,10 +53,6 @@ export function bridgeDisplayName(bridge: string): string {
   const names: Record<string, string> = {
     xdai: 'xDAI Bridge',
     omnibridge: 'Omnibridge',
-    'hop-eth': 'Hop (ETH)',
-    'hop-dai': 'Hop (DAI)',
-    'hop-usdc': 'Hop (USDC)',
-    'hop-usdt': 'Hop (USDT)',
     debridge: 'deBridge',
     squid: 'Squid',
     'stargate-eth': 'Stargate (ETH)',

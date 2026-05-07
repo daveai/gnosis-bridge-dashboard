@@ -2,7 +2,7 @@ export function MethodologyFooter() {
   return (
     <section className="border-t border-border pt-8 space-y-4">
       <p className="text-muted-foreground text-xs leading-relaxed max-w-4xl">
-        <span className="text-foreground">Methodology.</span> Thirteen bridges
+        <span className="text-foreground">Methodology.</span> Twelve bridges
         indexed directly on Gnosis Chain (ID 100). Aggregators such as Socket
         and LI.FI route through these bridges and are not counted separately.
         Intent-based bridges — Relay, Bungee V2, NEAR Intents, deBridge DLN —

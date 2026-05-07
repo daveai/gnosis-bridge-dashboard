@@ -99,18 +99,19 @@ export interface BridgeDailySeries {
 export const ALL_BRIDGES = [
   'xdai',
   'omnibridge',
-  'hop-eth',
-  'hop-dai',
-  'hop-usdc',
-  'hop-usdt',
   'debridge',
   'squid',
   'stargate-eth',
   'stargate-usdc',
   'symbiosis',
   'relay',
+  'bungee-v2',
+  'rhino-fi',
+  'gaszip',
+  'ccip',
+  'near-intents',
 ] as const
 
-export const TOTAL_CONFIGURED_BRIDGES = 13
+export const TOTAL_CONFIGURED_BRIDGES = 12
 
 export const BRIDGE_FOOTNOTES: Record<string, string> = {}
