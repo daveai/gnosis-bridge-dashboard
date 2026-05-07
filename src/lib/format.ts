@@ -119,8 +119,3 @@ export function periodLabel(period: '7d' | '30d' | 'all'): string {
   return 'since coverage start'
 }
 
-export function periodEditorialPrefix(period: '7d' | '30d' | 'all'): string {
-  if (period === '7d') return 'Last 7 days'
-  if (period === '30d') return 'Last 30 days'
-  return 'Since 7 April 2026'
-}

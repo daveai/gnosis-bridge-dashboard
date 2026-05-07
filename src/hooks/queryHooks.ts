@@ -140,28 +140,6 @@ export function useHero(params: { since?: string; sparkSince: string }) {
   })
 }
 
-export function useEditorialHeadline(params: SectionParams) {
-  return useQuery<BridgeDailyStats[]>({
-    queryKey: ['editorial-headline', params],
-    queryFn: async ({ signal }) => {
-      const where = dailyWhere({ since: params.since })
-      const r = await gqlFetch<BridgeDailyResp>(
-        `{
-          BridgeDailyStats${where} {
-            bridge
-            inflowVolumeUsd
-            outflowVolumeUsd
-            inflowCount
-            outflowCount
-          }
-        }`,
-        undefined,
-        signal,
-      )
-      return r.BridgeDailyStats
-    },
-  })
-}
 
 export interface TopBridgesData {
   daily: BridgeDailyStats[]

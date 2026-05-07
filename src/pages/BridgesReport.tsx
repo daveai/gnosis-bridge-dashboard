@@ -2,7 +2,6 @@ import { useSearchParams } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { HeroKpis } from '@/components/HeroKpis'
 import { Wordmark } from '@/components/Wordmark'
-import { EditorialHeadline } from '@/components/EditorialHeadline'
 import { TopBridges } from '@/components/TopBridges'
 import { VolumeOverTime } from '@/components/VolumeOverTime'
 import { TxSizeDistribution } from '@/components/TxSizeDistribution'
@@ -44,10 +43,6 @@ export function BridgesReport() {
       </header>
 
       <main className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 pb-12 space-y-12">
-        <ErrorBoundary>
-          <EditorialHeadline since={since} period={period} />
-        </ErrorBoundary>
-
         <ErrorBoundary>
           <HeroKpis since={since} period={period} />
         </ErrorBoundary>
