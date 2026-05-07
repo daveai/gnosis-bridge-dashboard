@@ -26,7 +26,6 @@ export function BridgesReport() {
   const periodParam = searchParams.get('period')
   const period = (['7d', '30d', 'all'].includes(periodParam ?? '') ? periodParam : 'all') as Period
   const since = computeSince(period)
-  const excludeBridge = searchParams.get('hideOmni') === '1' ? 'omnibridge' : undefined
 
   return (
     <div className="min-h-screen">
@@ -48,27 +47,27 @@ export function BridgesReport() {
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TopBridges since={since} period={period} excludeBridge={excludeBridge} />
+          <TopBridges since={since} period={period} />
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <VolumeOverTime since={since} excludeBridge={excludeBridge} />
+          <VolumeOverTime since={since} />
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <TxSizeDistribution since={since} excludeBridge={excludeBridge} />
+          <TxSizeDistribution since={since} />
         </ErrorBoundary>
 
         <ErrorBoundary>
-          <ChainSankey since={since} excludeBridge={excludeBridge} />
+          <ChainSankey since={since} />
         </ErrorBoundary>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <ErrorBoundary>
-            <TopTokens since={since} excludeBridge={excludeBridge} />
+            <TopTokens since={since} />
           </ErrorBoundary>
           <ErrorBoundary>
-            <TopRoutes since={since} excludeBridge={excludeBridge} />
+            <TopRoutes since={since} />
           </ErrorBoundary>
         </div>
 

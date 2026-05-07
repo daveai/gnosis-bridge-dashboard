@@ -8,7 +8,6 @@ import {
 
 interface SectionParams {
   since?: string
-  excludeBridge?: string
 }
 
 interface BridgeDailyResp {
@@ -61,7 +60,6 @@ function dailyWhere(params: SectionParams, opts?: { orderBy?: string }): string 
   const args: string[] = []
   const cond: string[] = []
   if (params.since) cond.push(`date: { _gte: "${params.since}" }`)
-  if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
   if (cond.length) args.push(`where: { ${cond.join(', ')} }`)
   if (opts?.orderBy) args.push(`order_by: { ${opts.orderBy} }`)
   return args.length ? `(${args.join(', ')})` : ''
@@ -74,7 +72,6 @@ function timestampCond(params: SectionParams, requireAmount: boolean): string[] 
     const sinceTs = Math.floor(new Date(params.since).getTime() / 1000).toString()
     cond.push(`timestamp: { _gte: "${sinceTs}" }`)
   }
-  if (params.excludeBridge) cond.push(`bridge: { _neq: "${params.excludeBridge}" }`)
   return cond
 }
 

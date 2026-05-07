@@ -10,13 +10,11 @@ import {
 import { type BridgeDailyStats, type BridgeSummary, type Period } from '@/lib/types'
 import { useTopBridges } from '@/hooks/queryHooks'
 import { SectionHeader } from './SectionHeader'
-import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable } from './Unavailable'
 
 interface Props {
   since?: string
   period: Period
-  excludeBridge?: string
 }
 
 const LOW_VOLUME_THRESHOLD = 50_000
@@ -84,8 +82,8 @@ function aggregate(
   })
 }
 
-export function TopBridges({ since, period, excludeBridge }: Props) {
-  const { data, isError } = useTopBridges({ since, excludeBridge })
+export function TopBridges({ since, period }: Props) {
+  const { data, isError } = useTopBridges({ since })
   const [showInactive, setShowInactive] = useState(false)
 
   const wowEnabled = period === '30d' || period === 'all'
@@ -98,9 +96,7 @@ export function TopBridges({ since, period, excludeBridge }: Props) {
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridges">
-          <InlineHideOmniToggle />
-        </SectionHeader>
+        <SectionHeader eyebrow="Bridges" />
         <Unavailable />
       </section>
     )
@@ -109,9 +105,7 @@ export function TopBridges({ since, period, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridges">
-          <InlineHideOmniToggle />
-        </SectionHeader>
+        <SectionHeader eyebrow="Bridges" />
         <div className="bg-muted/40 h-72 animate-pulse rounded-sm" />
       </section>
     )
@@ -124,9 +118,7 @@ export function TopBridges({ since, period, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Bridges">
-        <InlineHideOmniToggle />
-      </SectionHeader>
+      <SectionHeader eyebrow="Bridges" />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>

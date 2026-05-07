@@ -7,7 +7,6 @@ import { Unavailable } from './Unavailable'
 
 interface Props {
   since?: string
-  excludeBridge?: string
 }
 
 const BIN_COUNT = 12
@@ -55,8 +54,8 @@ function formatAxis(logValue: number): string {
   return `$${v.toFixed(0)}`
 }
 
-export function TxSizeDistribution({ since, excludeBridge }: Props) {
-  const { data, isError } = useTxSizes({ since, excludeBridge })
+export function TxSizeDistribution({ since }: Props) {
+  const { data, isError } = useTxSizes({ since })
 
   if (isError) {
     return (
@@ -80,9 +79,8 @@ export function TxSizeDistribution({ since, excludeBridge }: Props) {
     )
   }
 
-  const bridges = ALL_BRIDGES.filter((b) => b !== excludeBridge)
   const allSizes: number[] = []
-  const perBridge = bridges.map((b) => {
+  const perBridge = ALL_BRIDGES.map((b) => {
     const rows = data.perBridge[b] ?? []
     const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n: number) => n > 0)
     allSizes.push(...sizes)

@@ -37,32 +37,3 @@ export function PeriodSelector() {
   )
 }
 
-interface InlineHideOmniProps {
-  paramName?: string
-}
-
-export function InlineHideOmniToggle({ paramName = 'hideOmni' }: InlineHideOmniProps) {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const active = searchParams.get(paramName) === '1'
-
-  function toggle() {
-    const next = new URLSearchParams(searchParams)
-    if (active) next.delete(paramName)
-    else next.set(paramName, '1')
-    setSearchParams(next, { preventScrollReset: true })
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-colors ${
-        active
-          ? 'border-petrol-light text-text-primary'
-          : 'border-border text-text-muted hover:text-text-primary'
-      }`}
-    >
-      Excl. Omnibridge
-    </button>
-  )
-}

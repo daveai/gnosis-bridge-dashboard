@@ -16,15 +16,14 @@ interface RouteRow {
 
 interface Props {
   since?: string
-  excludeBridge?: string
 }
 
 function chainName(id: number): string {
   return CHAIN_NAMES[id] || `Chain ${id}`
 }
 
-export function TopRoutes({ since, excludeBridge }: Props) {
-  const { data, isError } = useChainPairDaily({ since, excludeBridge })
+export function TopRoutes({ since }: Props) {
+  const { data, isError } = useChainPairDaily({ since })
 
   let rows: RouteRow[] = []
 

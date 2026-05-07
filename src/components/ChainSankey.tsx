@@ -2,7 +2,6 @@ import { useChainPairDaily } from '@/hooks/queryHooks'
 import { CHAIN_NAMES } from '@/lib/chains'
 import { FlowSankey } from './charts/FlowSankey'
 import { SectionHeader } from './SectionHeader'
-import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable, EmptyLine } from './Unavailable'
 
 const GNOSIS_CHAIN_ID = 100
@@ -15,11 +14,10 @@ interface ChainFlow {
 
 interface Props {
   since?: string
-  excludeBridge?: string
 }
 
-export function ChainSankey({ since, excludeBridge }: Props) {
-  const { data, isError } = useChainPairDaily({ since, excludeBridge })
+export function ChainSankey({ since }: Props) {
+  const { data, isError } = useChainPairDaily({ since })
 
   let inflows: ChainFlow[] = []
   let outflows: ChainFlow[] = []
@@ -69,9 +67,7 @@ export function ChainSankey({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Chain Routing">
-        <InlineHideOmniToggle />
-      </SectionHeader>
+      <SectionHeader eyebrow="Chain Routing" />
       <div>
         {isError ? (
           <Unavailable />

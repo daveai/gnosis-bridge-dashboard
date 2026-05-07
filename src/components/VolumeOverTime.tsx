@@ -4,14 +4,12 @@ import { ALL_BRIDGES, type BridgeDailyStats } from '@/lib/types'
 import { useDailyVolume } from '@/hooks/queryHooks'
 import { SmallMultipleSpark, TotalsStrip } from './charts/SmallMultipleSpark'
 import { SectionHeader } from './SectionHeader'
-import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable } from './Unavailable'
 
 const VISIBLE_LIMIT = 8
 
 interface Props {
   since?: string
-  excludeBridge?: string
 }
 
 interface BridgeSeries {
@@ -47,16 +45,14 @@ function buildSeries(rows: BridgeDailyStats[]): BridgeSeries[] {
   return out
 }
 
-export function VolumeOverTime({ since, excludeBridge }: Props) {
-  const { data, isError } = useDailyVolume({ since, excludeBridge })
+export function VolumeOverTime({ since }: Props) {
+  const { data, isError } = useDailyVolume({ since })
   const [showAll, setShowAll] = useState(false)
 
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Volume Over Time">
-          <InlineHideOmniToggle />
-        </SectionHeader>
+        <SectionHeader eyebrow="Volume Over Time" />
         <Unavailable />
       </section>
     )
@@ -65,9 +61,7 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Volume Over Time">
-          <InlineHideOmniToggle />
-        </SectionHeader>
+        <SectionHeader eyebrow="Volume Over Time" />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="h-[100px] bg-muted/40 animate-pulse rounded-sm" />
@@ -80,9 +74,9 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
   const series = buildSeries(data)
   const seriesByBridge = new Map(series.map((s) => [s.bridge, s]))
 
-  const ordered = ALL_BRIDGES.filter((b) => b !== excludeBridge)
-    .map((b) => seriesByBridge.get(b) || { bridge: b, total: 0, series: [] })
-    .sort((a, b) => b.total - a.total)
+  const ordered = ALL_BRIDGES.map(
+    (b) => seriesByBridge.get(b) || { bridge: b, total: 0, series: [] },
+  ).sort((a, b) => b.total - a.total)
 
   const visible = showAll ? ordered : ordered.slice(0, VISIBLE_LIMIT)
   const hiddenCount = ordered.length - VISIBLE_LIMIT
@@ -106,9 +100,7 @@ export function VolumeOverTime({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Volume Over Time">
-        <InlineHideOmniToggle />
-      </SectionHeader>
+      <SectionHeader eyebrow="Volume Over Time" />
       <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
         <span className="flex items-center gap-2">
           <span

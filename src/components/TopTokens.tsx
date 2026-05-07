@@ -7,17 +7,16 @@ interface TokenRow {
   symbol: string
   inflow: number
   outflow: number
-  net: number
+  total: number
   transfers: number
 }
 
 interface Props {
   since?: string
-  excludeBridge?: string
 }
 
-export function TopTokens({ since, excludeBridge }: Props) {
-  const { data, isError } = useTopTokens({ since, excludeBridge })
+export function TopTokens({ since }: Props) {
+  const { data, isError } = useTopTokens({ since })
 
   let tokens: TokenRow[] = []
 
@@ -28,20 +27,20 @@ export function TopTokens({ since, excludeBridge }: Props) {
       const sym = canonicalTokenSymbol(t.tokenSymbol)
       const inflow = parseFloat(t.inflowVolumeUsd) || 0
       const outflow = parseFloat(t.outflowVolumeUsd) || 0
-      const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 }
+      const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, total: 0, transfers: 0 }
       e.inflow += inflow
       e.outflow += outflow
-      e.net = e.inflow - e.outflow
+      e.total = e.inflow + e.outflow
       e.transfers += t.transferCount
       merged.set(sym, e)
     }
     tokens = Array.from(merged.values())
-      .sort((a, b) => b.transfers - a.transfers)
+      .sort((a, b) => b.total - a.total)
       .slice(0, 10)
   }
 
-  const maxAbsNet = tokens.reduce((m, t) => Math.max(m, Math.abs(t.net)), 0) || 1
-  const totalAbsNet = tokens.reduce((s, t) => s + Math.abs(t.net), 0) || 1
+  const maxTotal = tokens.reduce((m, t) => Math.max(m, t.total), 0) || 1
+  const sumTotal = tokens.reduce((s, t) => s + t.total, 0) || 1
 
   return (
     <section>
@@ -62,16 +61,15 @@ export function TopTokens({ since, excludeBridge }: Props) {
             <thead>
               <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
                 <th className="text-left pb-3">Token</th>
-                <th className="text-right pb-3">Net flow</th>
-                <th className="pb-3 w-[36%]">Share of net flow</th>
-                <th className="text-right pb-3">Tx</th>
+                <th className="text-right pb-3">Total flow</th>
+                <th className="pb-3 w-[36%]">Share</th>
+                <th className="text-right pb-3 pr-4">Tx</th>
               </tr>
             </thead>
             <tbody>
               {tokens.map((t) => {
-                const sharePct = (Math.abs(t.net) / totalAbsNet) * 100
-                const barPct = (Math.abs(t.net) / maxAbsNet) * 100
-                const positive = t.net >= 0
+                const sharePct = (t.total / sumTotal) * 100
+                const barPct = (t.total / maxTotal) * 100
                 return (
                   <tr key={t.symbol} className="border-b border-border/50">
                     <td className="py-2.5">
@@ -83,12 +81,7 @@ export function TopTokens({ since, excludeBridge }: Props) {
                         {t.symbol}
                       </span>
                     </td>
-                    <td
-                      className={`py-2.5 text-right num ${positive ? 'text-petrol-light' : 'text-coral'}`}
-                    >
-                      {positive ? '+' : ''}
-                      {formatUsd(t.net)}
-                    </td>
+                    <td className="py-2.5 text-right num">{formatUsd(t.total)}</td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-sm overflow-hidden">
@@ -97,7 +90,6 @@ export function TopTokens({ since, excludeBridge }: Props) {
                             style={{
                               width: `${barPct}%`,
                               backgroundColor: assetClassColor(t.symbol),
-                              opacity: positive ? 1 : 0.55,
                             }}
                           />
                         </div>
@@ -106,7 +98,7 @@ export function TopTokens({ since, excludeBridge }: Props) {
                         </span>
                       </div>
                     </td>
-                    <td className="py-2.5 text-right num text-muted-foreground">
+                    <td className="py-2.5 text-right num text-muted-foreground pr-4">
                       {formatNumber(t.transfers)}
                     </td>
                   </tr>
@@ -119,4 +111,3 @@ export function TopTokens({ since, excludeBridge }: Props) {
     </section>
   )
 }
-
