@@ -1,6 +1,9 @@
-import { gql } from "@/lib/graphql";
+import { safeGql } from "@/lib/graphql";
 import type { ChainPairStats } from "@/lib/types";
 import { FlowSankey } from "./charts/FlowSankey";
+import { SectionHeader } from "./SectionHeader";
+import { InlineHideOmniToggle } from "./PeriodSelector";
+import { Unavailable, EmptyLine } from "./Unavailable";
 
 const GNOSIS_CHAIN_ID = 100;
 
@@ -18,7 +21,6 @@ const CHAIN_NAMES: Record<number, string> = {
   43114: "Avalanche",
   59144: "Linea",
   534352: "Scroll",
-  // deBridge internal chain IDs
   7565164: "Solana",
   100000014: "Sonic",
   100000017: "Abstract",
@@ -61,15 +63,15 @@ function aggregateFlows(transfers: TransferRow[]) {
   for (const tx of transfers) {
     const usd = parseFloat(tx.amountUsd || "0");
     if (tx.direction === "inflow") {
-      const existing = inflowMap.get(tx.sourceChainId) || { volume: 0, count: 0 };
-      existing.volume += usd;
-      existing.count++;
-      inflowMap.set(tx.sourceChainId, existing);
+      const e = inflowMap.get(tx.sourceChainId) || { volume: 0, count: 0 };
+      e.volume += usd;
+      e.count++;
+      inflowMap.set(tx.sourceChainId, e);
     } else {
-      const existing = outflowMap.get(tx.destChainId) || { volume: 0, count: 0 };
-      existing.volume += usd;
-      existing.count++;
-      outflowMap.set(tx.destChainId, existing);
+      const e = outflowMap.get(tx.destChainId) || { volume: 0, count: 0 };
+      e.volume += usd;
+      e.count++;
+      outflowMap.set(tx.destChainId, e);
     }
   }
 
@@ -87,29 +89,31 @@ function aggregateFlows(transfers: TransferRow[]) {
 }
 
 export async function ChainSankey({ since, excludeBridge }: Props) {
-  let inflows: ChainFlow[];
-  let outflows: ChainFlow[];
+  let inflows: ChainFlow[] = [];
+  let outflows: ChainFlow[] = [];
+  let unavailable = false;
 
   if (since || excludeBridge) {
-    const conditions: string[] = [];
+    const cond: string[] = [];
     if (since) {
       const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
-      conditions.push(`timestamp: { _gte: "${sinceTs}" }`);
+      cond.push(`timestamp: { _gte: "${sinceTs}" }`);
     }
-    if (excludeBridge) conditions.push(`bridge: { _neq: "${excludeBridge}" }`);
-    const where = `where: { ${conditions.join(", ")} }`;
+    if (excludeBridge) cond.push(`bridge: { _neq: "${excludeBridge}" }`);
+    const where = `where: { ${cond.join(", ")} }`;
 
-    const data = await gql<TransferResponse>(`{
-      BridgeTransfer(${where}) {
+    const r = await safeGql<TransferResponse>(`{
+      BridgeTransfer(${where}, limit: 5000) {
         direction
         sourceChainId
         destChainId
         amountUsd
       }
     }`);
-    ({ inflows, outflows } = aggregateFlows(data.BridgeTransfer));
+    if (!r.ok) unavailable = true;
+    else ({ inflows, outflows } = aggregateFlows(r.data.BridgeTransfer));
   } else {
-    const data = await gql<AllTimeResponse>(`{
+    const r = await safeGql<AllTimeResponse>(`{
       ChainPairStats {
         sourceChainId
         destChainId
@@ -119,42 +123,57 @@ export async function ChainSankey({ since, excludeBridge }: Props) {
         transferCount
       }
     }`);
-
-    const inflowMap = new Map<number, ChainFlow>();
-    const outflowMap = new Map<number, ChainFlow>();
-
-    for (const cp of data.ChainPairStats) {
-      if (cp.destChainId === GNOSIS_CHAIN_ID && cp.sourceChainId !== GNOSIS_CHAIN_ID && CHAIN_NAMES[cp.sourceChainId]) {
-        const existing = inflowMap.get(cp.sourceChainId) || {
-          chainName: CHAIN_NAMES[cp.sourceChainId],
-          volume: 0,
-          count: 0,
-        };
-        existing.volume += parseFloat(cp.totalVolumeUsd);
-        existing.count += cp.transferCount;
-        inflowMap.set(cp.sourceChainId, existing);
+    if (!r.ok) {
+      unavailable = true;
+    } else {
+      const inflowMap = new Map<number, ChainFlow>();
+      const outflowMap = new Map<number, ChainFlow>();
+      for (const cp of r.data.ChainPairStats) {
+        if (cp.destChainId === GNOSIS_CHAIN_ID && cp.sourceChainId !== GNOSIS_CHAIN_ID && CHAIN_NAMES[cp.sourceChainId]) {
+          const e = inflowMap.get(cp.sourceChainId) || {
+            chainName: CHAIN_NAMES[cp.sourceChainId],
+            volume: 0,
+            count: 0,
+          };
+          e.volume += parseFloat(cp.totalVolumeUsd) || 0;
+          e.count += cp.transferCount;
+          inflowMap.set(cp.sourceChainId, e);
+        }
+        if (cp.sourceChainId === GNOSIS_CHAIN_ID && cp.destChainId !== GNOSIS_CHAIN_ID && CHAIN_NAMES[cp.destChainId]) {
+          const e = outflowMap.get(cp.destChainId) || {
+            chainName: CHAIN_NAMES[cp.destChainId],
+            volume: 0,
+            count: 0,
+          };
+          e.volume += parseFloat(cp.totalVolumeUsd) || 0;
+          e.count += cp.transferCount;
+          outflowMap.set(cp.destChainId, e);
+        }
       }
-      if (cp.sourceChainId === GNOSIS_CHAIN_ID && cp.destChainId !== GNOSIS_CHAIN_ID && CHAIN_NAMES[cp.destChainId]) {
-        const existing = outflowMap.get(cp.destChainId) || {
-          chainName: CHAIN_NAMES[cp.destChainId],
-          volume: 0,
-          count: 0,
-        };
-        existing.volume += parseFloat(cp.totalVolumeUsd);
-        existing.count += cp.transferCount;
-        outflowMap.set(cp.destChainId, existing);
-      }
+      inflows = Array.from(inflowMap.values()).sort((a, b) => b.volume - a.volume).slice(0, 6);
+      outflows = Array.from(outflowMap.values()).sort((a, b) => b.volume - a.volume).slice(0, 6);
     }
-
-    inflows = Array.from(inflowMap.values()).sort((a, b) => b.volume - a.volume).slice(0, 6);
-    outflows = Array.from(outflowMap.values()).sort((a, b) => b.volume - a.volume).slice(0, 6);
   }
+
+  const empty = !unavailable && inflows.length === 0 && outflows.length === 0;
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-4">Chain Flows</h2>
-      <div className="bg-surface-card border border-border rounded-lg p-5 overflow-x-auto flex justify-center">
-        <FlowSankey inflows={inflows} outflows={outflows} />
+      <SectionHeader eyebrow="Chain flows">
+        <InlineHideOmniToggle />
+      </SectionHeader>
+      <div className="bg-surface-card border border-border rounded-lg p-5">
+        {unavailable ? (
+          <Unavailable />
+        ) : empty ? (
+          <EmptyLine message="No chain flow data" />
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px] flex justify-center">
+              <FlowSankey inflows={inflows} outflows={outflows} />
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
