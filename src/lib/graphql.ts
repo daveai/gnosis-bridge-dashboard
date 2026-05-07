@@ -19,3 +19,20 @@ export async function gql<T>(query: string, variables?: Record<string, unknown>)
 
   return json.data;
 }
+
+export type Result<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+export async function safeGql<T>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<Result<T>> {
+  try {
+    const data = await gql<T>(query, variables);
+    return { ok: true, data };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { ok: false, error };
+  }
+}

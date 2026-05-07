@@ -15,6 +15,31 @@ export interface BridgeDailyStats {
   inflowVolumeUsd: string;
   outflowVolumeUsd: string;
   uniqueUsers: number;
+  avgInflowUsd?: string | null;
+  avgOutflowUsd?: string | null;
+  minTxSizeUsd?: string | null;
+  maxTxSizeUsd?: string | null;
+}
+
+export interface BridgeTokenDailyStats {
+  id: string;
+  bridge: string;
+  date: string;
+  token: string;
+  tokenSymbol: string | null;
+  inflowVolumeUsd: string;
+  outflowVolumeUsd: string;
+  transferCount: number;
+}
+
+export interface ChainPairDailyStats {
+  id: string;
+  bridge: string;
+  date: string;
+  sourceChainId: number;
+  destChainId: number;
+  volumeUsd: string;
+  transferCount: number;
 }
 
 export interface TokenStats {
@@ -43,6 +68,8 @@ export interface BridgeTransfer {
   amountUsd: string | null;
   timestamp: string;
   txHash: string;
+  sourceChainId?: number;
+  destChainId?: number;
 }
 
 export interface BridgeSummary {
@@ -50,8 +77,11 @@ export interface BridgeSummary {
   inflowUsd: number;
   outflowUsd: number;
   totalUsd: number;
+  netUsd: number;
   inflowCount: number;
   outflowCount: number;
+  avgTicketUsd: number;
+  medianTicketUsd: number | null;
 }
 
 export interface DailyVolume {
@@ -59,3 +89,31 @@ export interface DailyVolume {
   inflowUsd: number;
   outflowUsd: number;
 }
+
+export interface BridgeDailySeries {
+  bridge: string;
+  total: number;
+  series: DailyVolume[];
+}
+
+export const ALL_BRIDGES = [
+  "xdai",
+  "omnibridge",
+  "hop-eth",
+  "hop-dai",
+  "hop-usdc",
+  "hop-usdt",
+  "debridge",
+  "squid",
+  "stargate-eth",
+  "stargate-usdc",
+  "symbiosis",
+  "relay",
+] as const;
+
+export const TOTAL_CONFIGURED_BRIDGES = 12;
+
+export const BRIDGE_FOOTNOTES: Record<string, string> = {
+  bungee: "NOCA counterparty exposure",
+  "bungee-v2": "NOCA counterparty exposure",
+};

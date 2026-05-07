@@ -63,3 +63,17 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
+
+.num,
+.font-mono,
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+.section-eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}

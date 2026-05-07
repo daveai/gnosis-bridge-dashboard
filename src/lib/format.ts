@@ -9,6 +9,11 @@ export function formatUsd(value: string | number | null | undefined): string {
   return `${sign}$${abs.toFixed(2)}`;
 }
 
+export function formatSignedUsd(value: number): string {
+  if (value > 0) return `+${formatUsd(value)}`;
+  return formatUsd(value);
+}
+
 export function formatUsdFull(value: string | number | null | undefined): string {
   if (value == null) return "$0.00";
   const num = typeof value === "string" ? parseFloat(value) : value;
@@ -20,6 +25,10 @@ export function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
 }
 
+export function formatPercent(value: number, digits = 1): string {
+  return `${value.toFixed(digits)}%`;
+}
+
 export function formatDate(timestamp: string): string {
   const ts = parseInt(timestamp);
   return new Date(ts * 1000).toLocaleDateString("en-US", {
@@ -28,6 +37,16 @@ export function formatDate(timestamp: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+export function formatRelativeTime(timestamp: string | number): string {
+  const ts = typeof timestamp === "string" ? parseInt(timestamp) : timestamp;
+  const now = Date.now() / 1000;
+  const diff = Math.max(0, now - ts);
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
 }
 
 export function bridgeDisplayName(bridge: string): string {
@@ -44,10 +63,37 @@ export function bridgeDisplayName(bridge: string): string {
     "stargate-usdc": "Stargate (USDC)",
     "symbiosis": "Symbiosis",
     "relay": "Relay",
+    "bungee": "Bungee",
+    "bungee-v2": "Bungee V2",
   };
   return names[bridge] || bridge;
 }
 
 export function shortenTxHash(hash: string): string {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+}
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+export function isoDateNDaysAgo(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().split("T")[0];
+}
+
+export function periodLabel(period: "7d" | "30d" | "all"): string {
+  if (period === "7d") return "7 days";
+  if (period === "30d") return "30 days";
+  return "since coverage start";
+}
+
+export function periodEditorialPrefix(period: "7d" | "30d" | "all"): string {
+  if (period === "7d") return "Last 7 days";
+  if (period === "30d") return "Last 30 days";
+  return "Since 1 January 2026";
 }
