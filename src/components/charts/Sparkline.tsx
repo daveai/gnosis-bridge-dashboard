@@ -1,9 +1,31 @@
-import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts'
+import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts'
+import { formatSignedUsd } from '@/lib/format'
+
+interface SparkPoint {
+  date?: string
+  value: number
+}
 
 interface Props {
-  data: { value: number }[]
+  data: SparkPoint[]
   color?: string
   height?: number
+}
+
+interface TipPayload {
+  payload?: SparkPoint
+}
+
+function SparkTooltip({ active, payload }: { active?: boolean; payload?: TipPayload[] }) {
+  if (!active || !payload?.length) return null
+  const p = payload[0]?.payload
+  if (!p) return null
+  return (
+    <div className="bg-surface-raised border border-border rounded-sm px-2.5 py-1.5 text-[11px] space-y-0.5">
+      {p.date ? <p className="text-muted-foreground">{p.date}</p> : null}
+      <p className="num text-foreground">{formatSignedUsd(p.value)}</p>
+    </div>
+  )
 }
 
 export function Sparkline({ data, color = 'var(--color-petrol-light)', height = 48 }: Props) {
@@ -14,6 +36,10 @@ export function Sparkline({ data, color = 'var(--color-petrol-light)', height = 
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 4 }}>
         <YAxis hide domain={['dataMin', 'dataMax']} />
+        <Tooltip
+          content={<SparkTooltip />}
+          cursor={{ stroke: 'var(--color-foreground)', strokeOpacity: 0.15 }}
+        />
         <Line
           type="monotone"
           dataKey="value"

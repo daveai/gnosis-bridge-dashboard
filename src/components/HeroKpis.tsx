@@ -52,14 +52,14 @@ export function HeroKpis({ since, period }: Props) {
   const net = inflow - outflow
   const totalVolume = inflow + outflow
 
-  const sparkPoints: { value: number }[] = []
+  const sparkPoints: { date: string; value: number }[] = []
   const map = new Map<string, number>()
   for (const d of data.spark) {
     const v = (parseFloat(d.inflowVolumeUsd) || 0) - (parseFloat(d.outflowVolumeUsd) || 0)
     map.set(d.date, (map.get(d.date) || 0) + v)
   }
   const sorted = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
-  for (const [, v] of sorted) sparkPoints.push({ value: v })
+  for (const [date, v] of sorted) sparkPoints.push({ date, value: v })
 
   const sizes = data.sample.map((t) => parseFloat(t.amountUsd || '0')).filter((n) => n > 0)
   const medianTicket = median(sizes)
