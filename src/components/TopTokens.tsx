@@ -1,5 +1,5 @@
 import { safeGql } from "@/lib/graphql";
-import { formatUsd, formatNumber } from "@/lib/format";
+import { formatUsd, formatNumber, canonicalTokenSymbol } from "@/lib/format";
 import type { TokenStats, BridgeTransfer } from "@/lib/types";
 import { SectionHeader } from "./SectionHeader";
 import { Unavailable, EmptyLine } from "./Unavailable";
@@ -32,7 +32,7 @@ interface Props {
 function aggregateByToken(rows: PeriodResp["BridgeTransfer"]): TokenRow[] {
   const m = new Map<string, TokenRow>();
   for (const tx of rows) {
-    const sym = tx.tokenSymbol || "Unknown";
+    const sym = canonicalTokenSymbol(tx.tokenSymbol);
     const e = m.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 };
     const usd = parseFloat(tx.amountUsd || "0");
     if (tx.direction === "inflow") e.inflow += usd;
@@ -81,11 +81,20 @@ export async function TopTokens({ since, excludeBridge }: Props) {
     if (!r.ok) {
       unavailable = true;
     } else {
-      tokens = r.data.TokenStats.filter((t) => t.symbol).map((t) => {
+      const merged = new Map<string, TokenRow>();
+      for (const t of r.data.TokenStats) {
+        if (!t.symbol) continue;
+        const sym = canonicalTokenSymbol(t.symbol);
         const inflow = parseFloat(t.inflowVolumeUsd) || 0;
         const outflow = parseFloat(t.outflowVolumeUsd) || 0;
-        return { symbol: t.symbol!, inflow, outflow, net: inflow - outflow, transfers: t.transferCount };
-      });
+        const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 };
+        e.inflow += inflow;
+        e.outflow += outflow;
+        e.net = e.inflow - e.outflow;
+        e.transfers += t.transferCount;
+        merged.set(sym, e);
+      }
+      tokens = Array.from(merged.values()).sort((a, b) => b.transfers - a.transfers).slice(0, 10);
     }
   }
 
@@ -94,8 +103,8 @@ export async function TopTokens({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Top tokens" />
-      <div className="bg-surface-card border border-border rounded-lg p-5 overflow-x-auto">
+      <SectionHeader eyebrow="Tokens" />
+      <div className="overflow-x-auto">
         {unavailable ? (
           <Unavailable />
         ) : tokens.length === 0 ? (
@@ -103,11 +112,11 @@ export async function TopTokens({ since, excludeBridge }: Props) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-text-muted text-[10px] uppercase tracking-[0.12em] border-b border-border">
-                <th className="text-left pb-3 font-medium">Token</th>
-                <th className="text-right pb-3 font-medium">Net</th>
-                <th className="pb-3 font-medium w-[36%]">Share of net flow</th>
-                <th className="text-right pb-3 font-medium">Tx</th>
+              <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
+                <th className="text-left pb-3">Token</th>
+                <th className="text-right pb-3">Net flow</th>
+                <th className="pb-3 w-[36%]">Share of net flow</th>
+                <th className="text-right pb-3">Tx</th>
               </tr>
             </thead>
             <tbody>
@@ -117,24 +126,35 @@ export async function TopTokens({ since, excludeBridge }: Props) {
                 const positive = t.net >= 0;
                 return (
                   <tr key={t.symbol} className="border-b border-border/50">
-                    <td className="py-2.5 font-medium">{t.symbol}</td>
+                    <td className="py-2.5">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-2 h-2 rounded-sm"
+                          style={{ backgroundColor: assetClassColor(t.symbol) }}
+                        />
+                        {t.symbol}
+                      </span>
+                    </td>
                     <td className={`py-2.5 text-right num ${positive ? "text-petrol-light" : "text-coral"}`}>
                       {positive ? "+" : ""}{formatUsd(t.net)}
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-surface-raised rounded-sm overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-muted rounded-sm overflow-hidden">
                           <div
                             className="h-full"
-                            style={{ width: `${barPct}%`, backgroundColor: positive ? "#105F7C" : "#FF8566" }}
+                            style={{
+                              width: `${barPct}%`,
+                              backgroundColor: positive ? "var(--color-inflow)" : "var(--color-outflow)",
+                            }}
                           />
                         </div>
-                        <span className="num text-[11px] text-text-secondary w-[42px] text-right">
+                        <span className="num text-[11px] text-muted-foreground w-[42px] text-right">
                           {sharePct.toFixed(1)}%
                         </span>
                       </div>
                     </td>
-                    <td className="py-2.5 text-right num text-text-secondary">{formatNumber(t.transfers)}</td>
+                    <td className="py-2.5 text-right num text-muted-foreground">{formatNumber(t.transfers)}</td>
                   </tr>
                 );
               })}
@@ -144,4 +164,15 @@ export async function TopTokens({ since, excludeBridge }: Props) {
       </div>
     </section>
   );
+}
+
+function assetClassColor(symbol: string): string {
+  const s = symbol.toUpperCase();
+  if (["USDC", "USDT", "DAI", "SDAI", "EURE", "GBPE", "USDS", "WXDAI", "XDAI"].includes(s)) {
+    return "var(--color-asset-stable)";
+  }
+  if (s === "GNO") return "var(--color-asset-gno)";
+  if (["WETH", "ETH", "WSTETH"].includes(s)) return "var(--color-asset-eth)";
+  if (["WBTC", "BTC"].includes(s)) return "var(--color-asset-btc)";
+  return "var(--color-asset-other)";
 }

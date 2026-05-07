@@ -1,79 +1,121 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Regular.otf") format("opentype");
+  font-family: "Die Grotesk";
+  src: url("/fonts/die-grotesk-vf-roman.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Die Grotesk";
+  src: url("/fonts/die-grotesk-vf-italic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GT America Mono";
+  src: url("/fonts/GT-America-Mono-Regular.woff2") format("woff2");
   font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Medium.otf") format("opentype");
+  font-family: "GT America Mono";
+  src: url("/fonts/GT-America-Mono-Medium.woff2") format("woff2");
   font-weight: 500;
-  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Semibold.otf") format("opentype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Bold.otf") format("opentype");
+  font-family: "GT America Mono";
+  src: url("/fonts/GT-America-Mono-Bold.woff2") format("woff2");
   font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter.ttf") format("truetype");
-  font-weight: 400 700;
-  font-style: normal;
   font-display: swap;
 }
 
 @theme {
-  --color-petrol: #09354F;
-  --color-petrol-light: #105F7C;
-  --color-coral: #FF8566;
-  --color-surface: #0a0a0b;
-  --color-surface-raised: #111113;
-  --color-surface-card: #161619;
-  --color-border: #222228;
-  --color-text-primary: #FAFAFA;
-  --color-text-secondary: #888892;
-  --color-text-muted: #555560;
-  --color-inflow: #105F7C;
-  --color-outflow: #FF8566;
+  /* Page chrome — Apple Finance-inspired light surface */
+  --color-background: #f2f2f7;
+  --color-foreground: #000000;
+  --color-card: #ffffff;
+  --color-card-foreground: #000000;
+  --color-border: #c7c7cc;
+  --color-muted: #e8e8ed;
+  --color-muted-foreground: #6c6c70;
 
-  --font-sans: "Switzer", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+  /* Brand petrol family */
+  --color-petrol: #09354f;
+  --color-petrol-light: #105f7c;
+  --color-petrol-teal: #2f899e;
+  --color-petrol-sky: #abdbe6;
+
+  /* Coral — used only for outflow / negative / loss semantics */
+  --color-coral: #ff8566;
+
+  /* Semantic — non-negotiable financial meaning */
+  --color-positive: #1a7f37;
+  --color-negative: #c0392b;
+  --color-warning: #b45309;
+
+  /* Inflow/outflow aliases for chart code */
+  --color-inflow: var(--color-petrol-light);
+  --color-outflow: var(--color-coral);
+
+  /* Asset-class tokens (consistent across sections) */
+  --color-asset-gno: #2f899e;
+  --color-asset-eth: #105f7c;
+  --color-asset-stable: #8a8a8e;
+  --color-asset-btc: #c87533;
+  --color-asset-other: #4a4a4f;
+
+  /* Legacy aliases — keep existing component class names working */
+  --color-surface: var(--color-background);
+  --color-surface-raised: var(--color-card);
+  --color-surface-card: var(--color-card);
+  --color-text-primary: var(--color-foreground);
+  --color-text-secondary: #1c1c1e;
+  --color-text-muted: var(--color-muted-foreground);
+
+  --font-sans: "Die Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "GT America Mono", "SF Mono", "Cascadia Code", "Fira Code", monospace;
+}
+
+html {
+  font-variant-numeric: tabular-nums;
 }
 
 body {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .num,
 .font-mono,
-table {
+table,
+td {
   font-variant-numeric: tabular-nums;
 }
 
+/* Section header style — small-caps tracked label over a heavy black rule.
+   Replaces the previous text-only eyebrow. */
 .section-eyebrow {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-text-muted);
-  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-muted-foreground);
+  font-weight: 600;
+}
+
+.section-rule {
+  border-top: 2px solid var(--color-foreground);
+  margin-bottom: 1.5rem;
 }

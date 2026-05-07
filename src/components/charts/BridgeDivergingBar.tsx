@@ -57,14 +57,14 @@ export function BridgeDivergingBar({ data }: Props) {
                 <div className="w-1/2 h-full flex items-center justify-end pr-px">
                   <div
                     title={`Outflow ${formatUsd(row.outflowUsd)}`}
-                    style={{ width: `${outflowPct * 2}%`, backgroundColor: "#FF8566" }}
+                    style={{ width: `${outflowPct * 2}%`, backgroundColor: "var(--color-outflow)" }}
                     className="h-4 rounded-l-sm"
                   />
                 </div>
                 <div className="w-1/2 h-full flex items-center pl-px">
                   <div
                     title={`Inflow ${formatUsd(row.inflowUsd)}`}
-                    style={{ width: `${inflowPct * 2}%`, backgroundColor: "#105F7C" }}
+                    style={{ width: `${inflowPct * 2}%`, backgroundColor: "var(--color-inflow)" }}
                     className="h-4 rounded-r-sm"
                   />
                 </div>

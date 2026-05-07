@@ -1,6 +1,5 @@
 import { safeGql } from "@/lib/graphql";
-import { formatUsd, periodEditorialPrefix } from "@/lib/format";
-import { bridgeDisplayName } from "@/lib/format";
+import { formatUsd, bridgeDisplayName } from "@/lib/format";
 import type { BridgeDailyStats } from "@/lib/types";
 
 interface Response {
@@ -59,19 +58,18 @@ export async function EditorialHeadline({ since, period }: Props) {
   const topShare = top && totalTwoWay > 0 ? (top.total / totalTwoWay) * 100 : 0;
 
   const net = inflow - outflow;
-  const direction = net >= 0 ? "net inflow" : "net outflow";
-  const prefix = periodEditorialPrefix(period);
+  const direction = net >= 0 ? "Net inflow" : "Net outflow";
   const netLabel = formatUsd(Math.abs(net));
   const txLabel = transfers.toLocaleString("en-US");
 
   return (
-    <p className="text-xl text-text-primary font-medium leading-snug">
-      {prefix}: {direction} of <span className="num">{netLabel}</span> on{" "}
+    <p className="text-xl text-foreground leading-snug">
+      {direction} of <span className="num">{netLabel}</span> across{" "}
       <span className="num">{txLabel}</span> transfers.
       {top ? (
         <>
           {" "}
-          {bridgeDisplayName(top.bridge)} drove{" "}
+          {bridgeDisplayName(top.bridge)} accounted for{" "}
           <span className="num">{topShare.toFixed(0)}%</span> of two-way volume.
         </>
       ) : null}

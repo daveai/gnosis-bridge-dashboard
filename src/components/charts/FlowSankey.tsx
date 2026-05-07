@@ -14,10 +14,10 @@ interface Props {
   outflows: ChainFlow[];
 }
 
-const INFLOW_COLOR = "rgba(16, 95, 124, 0.55)";
-const OUTFLOW_COLOR = "rgba(255, 133, 102, 0.55)";
-const NODE_COLOR = "#2a2a32";
-const GNOSIS_COLOR = "#105F7C";
+const INFLOW_COLOR = "color-mix(in oklch, var(--color-inflow) 55%, transparent)";
+const OUTFLOW_COLOR = "color-mix(in oklch, var(--color-outflow) 55%, transparent)";
+const NODE_COLOR = "var(--color-muted-foreground)";
+const GNOSIS_COLOR = "var(--color-petrol-light)";
 
 function CustomNode({ x, y, width, height, payload, chartWidth }: any) {
   const isGnosis = payload.name === "Gnosis";
@@ -38,10 +38,9 @@ function CustomNode({ x, y, width, height, payload, chartWidth }: any) {
         y={y + height / 2}
         textAnchor={isGnosis ? "middle" : isLeft ? "end" : "start"}
         dominantBaseline="central"
-        fill="#FAFAFA"
+        fill="var(--color-foreground)"
         fontSize={12}
         fontWeight={isGnosis ? 600 : 400}
-        fontFamily="Switzer, Inter, system-ui, sans-serif"
       >
         {payload.name}
       </text>

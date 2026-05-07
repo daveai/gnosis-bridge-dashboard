@@ -58,15 +58,28 @@ export function bridgeDisplayName(bridge: string): string {
     "hop-usdc": "Hop (USDC)",
     "hop-usdt": "Hop (USDT)",
     "debridge": "deBridge",
-    "squid": "Squid/Axelar",
+    "squid": "Squid",
     "stargate-eth": "Stargate (ETH)",
     "stargate-usdc": "Stargate (USDC)",
     "symbiosis": "Symbiosis",
     "relay": "Relay",
     "bungee": "Bungee",
     "bungee-v2": "Bungee V2",
+    "rhino-fi": "rhino.fi",
+    "gaszip": "GasZip",
+    "ccip": "Chainlink CCIP",
+    "near-intents": "NEAR Intents",
   };
   return names[bridge] || bridge;
+}
+
+// USDC and USDC.e are 1:1 fungible on Gnosis via the official transmuter, so
+// we collapse them into a single "USDC" row in cross-token aggregations.
+export function canonicalTokenSymbol(symbol: string | null | undefined): string {
+  if (!symbol) return "Unknown";
+  const s = symbol.toUpperCase();
+  if (s === "USDC.E") return "USDC";
+  return symbol;
 }
 
 export function shortenTxHash(hash: string): string {
@@ -95,5 +108,5 @@ export function periodLabel(period: "7d" | "30d" | "all"): string {
 export function periodEditorialPrefix(period: "7d" | "30d" | "all"): string {
   if (period === "7d") return "Last 7 days";
   if (period === "30d") return "Last 30 days";
-  return "Since 1 January 2026";
+  return "Since 7 April 2026";
 }

@@ -105,34 +105,36 @@ export async function HeroKpis({ since }: Props) {
   const netColor = net >= 0 ? "text-petrol-light" : "text-coral";
 
   return (
-    <section className="grid lg:grid-cols-5 gap-4">
-      <div className="lg:col-span-3 bg-surface-card border border-border rounded-lg p-6">
-        <p className="section-eyebrow mb-3">Net Flow</p>
-        <p className={`text-5xl font-bold num ${netColor}`}>
+    <section className="grid lg:grid-cols-5 gap-8 lg:gap-12 pt-2 pb-6">
+      <div className="lg:col-span-3 flex flex-col">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          Net Flow
+        </p>
+        <p className={`mt-1 text-[2.75rem] sm:text-5xl font-mono leading-none num ${netColor}`}>
           {formatSignedUsd(net)}
         </p>
-        <p className="text-text-secondary text-sm mt-2">
+        <p className="text-muted-foreground text-sm mt-3">
           <span className="num">{formatUsd(inflow)}</span> in /{" "}
           <span className="num">{formatUsd(outflow)}</span> out
         </p>
         <div className="mt-4 -mx-1">
           <Sparkline
             data={sparkPoints}
-            color={net >= 0 ? "#105F7C" : "#FF8566"}
-            height={56}
+            color={net >= 0 ? "var(--color-inflow)" : "var(--color-outflow)"}
+            height={48}
           />
         </div>
-        <p className="text-text-muted text-[11px] mt-1">30-day net flow</p>
+        <p className="text-muted-foreground text-[11px] mt-1">30-day net flow</p>
       </div>
 
-      <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-        <KpiCard label="Total Volume" value={formatUsd(totalVolume)} />
-        <KpiCard
+      <div className="lg:col-span-2 grid grid-cols-2 gap-x-8 gap-y-6">
+        <Metric label="Total Volume" value={formatUsd(totalVolume)} />
+        <Metric
           label="Active Bridges"
           value={`${activeBridges.size} / ${TOTAL_CONFIGURED_BRIDGES}`}
         />
-        <KpiCard label="Transfers" value={formatNumber(transfers)} />
-        <KpiCard
+        <Metric label="Transfers" value={formatNumber(transfers)} />
+        <Metric
           label="Median Ticket"
           value={medianTicket != null ? formatUsd(medianTicket) : "—"}
         />
@@ -141,11 +143,15 @@ export async function HeroKpis({ since }: Props) {
   );
 }
 
-function KpiCard({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-surface-card border border-border rounded-lg p-4 flex flex-col justify-between">
-      <p className="section-eyebrow">{label}</p>
-      <p className="text-2xl font-semibold num mt-2">{value}</p>
+    <div className="flex flex-col gap-1">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </p>
+      <span className="font-mono text-[1.5rem] leading-none num text-foreground">
+        {value}
+      </span>
     </div>
   );
 }

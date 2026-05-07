@@ -180,8 +180,8 @@ export async function TopRoutes({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Top routes" />
-      <div className="bg-surface-card border border-border rounded-lg p-5 overflow-x-auto">
+      <SectionHeader eyebrow="Routes" />
+      <div className="overflow-x-auto">
         {unavailable ? (
           <Unavailable />
         ) : rows.length === 0 ? (
@@ -189,24 +189,24 @@ export async function TopRoutes({ since, excludeBridge }: Props) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-text-muted text-[10px] uppercase tracking-[0.12em] border-b border-border">
-                <th className="text-left pb-3 font-medium">Route</th>
-                <th className="text-right pb-3 font-medium">Volume</th>
-                <th className="text-right pb-3 font-medium">Tx</th>
-                <th className="text-right pb-3 font-medium">Top bridge</th>
+              <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
+                <th className="text-left pb-3">Route</th>
+                <th className="text-right pb-3">Volume</th>
+                <th className="text-right pb-3">Tx</th>
+                <th className="text-left pb-3">Top bridge</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.key} className="border-b border-border/50">
                   <td className="py-2.5">
-                    <span className="font-medium">{r.source}</span>
-                    <span className="text-text-muted mx-2">{"→"}</span>
-                    <span className="font-medium">{r.dest}</span>
+                    <span>{r.source}</span>
+                    <span className="text-muted-foreground mx-2">{"→"}</span>
+                    <span>{r.dest}</span>
                   </td>
                   <td className="py-2.5 text-right num">{formatUsd(r.volume)}</td>
-                  <td className="py-2.5 text-right num text-text-secondary">{formatNumber(r.transfers)}</td>
-                  <td className="py-2.5 text-right text-text-secondary">{bridgeDisplayName(r.topBridge)}</td>
+                  <td className="py-2.5 text-right num text-muted-foreground">{formatNumber(r.transfers)}</td>
+                  <td className="py-2.5 text-left text-muted-foreground">{bridgeDisplayName(r.topBridge)}</td>
                 </tr>
               ))}
             </tbody>

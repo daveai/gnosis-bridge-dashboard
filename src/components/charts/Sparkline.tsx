@@ -8,7 +8,7 @@ interface Props {
   height?: number;
 }
 
-export function Sparkline({ data, color = "#FAFAFA", height = 48 }: Props) {
+export function Sparkline({ data, color = "var(--color-petrol-light)", height = 48 }: Props) {
   if (data.length === 0) {
     return <div className="h-12" />;
   }
@@ -48,8 +48,8 @@ export function DualSparkline({ inflow, outflow, height = 48 }: DualProps) {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 4 }}>
         <YAxis hide domain={[0, "dataMax"]} />
-        <Line type="monotone" dataKey="inflow" stroke="#105F7C" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-        <Line type="monotone" dataKey="outflow" stroke="#FF8566" strokeWidth={1.25} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="inflow" stroke="var(--color-inflow)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="outflow" stroke="var(--color-outflow)" strokeWidth={1.25} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
       </LineChart>
     </ResponsiveContainer>
   );

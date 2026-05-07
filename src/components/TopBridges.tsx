@@ -91,12 +91,10 @@ export async function TopBridges({ since, excludeBridge }: Props) {
   if (!daily.ok) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridges, ranked by net flow">
+        <SectionHeader eyebrow="Bridges by net flow">
           <InlineHideOmniToggle />
         </SectionHeader>
-        <div className="bg-surface-card border border-border rounded-lg p-5">
-          <Unavailable />
-        </div>
+        <Unavailable />
       </section>
     );
   }
@@ -120,22 +118,19 @@ export async function TopBridges({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Bridges, ranked by net flow">
+      <SectionHeader eyebrow="Bridges by net flow">
         <InlineHideOmniToggle />
       </SectionHeader>
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-surface-card border border-border rounded-lg p-5">
-          <BridgeDivergingBar data={bridges} />
-        </div>
-        <div className="bg-surface-card border border-border rounded-lg p-5 overflow-x-auto">
+      <div className="grid lg:grid-cols-2 gap-8">
+        <BridgeDivergingBar data={bridges} />
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-text-muted text-[10px] uppercase tracking-[0.12em] border-b border-border">
-                <th className="text-left pb-3 font-medium">Bridge</th>
-                <th className="text-right pb-3 font-medium">Net flow</th>
-                <th className="text-right pb-3 font-medium">Avg ticket</th>
-                <th className="text-right pb-3 font-medium">Median ticket</th>
-                <th className="text-right pb-3 font-medium">Tx count</th>
+              <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
+                <th className="text-left pb-3">Bridge</th>
+                <th className="text-right pb-3">Net flow</th>
+                <th className="text-right pb-3">Median ticket</th>
+                <th className="text-right pb-3">Tx count</th>
               </tr>
             </thead>
             <tbody>
@@ -144,9 +139,9 @@ export async function TopBridges({ since, excludeBridge }: Props) {
                 return (
                   <tr key={b.bridge} className="border-b border-border/50">
                     <td className="py-2.5">
-                      <div className="font-medium">{bridgeDisplayName(b.bridge)}</div>
+                      <div>{bridgeDisplayName(b.bridge)}</div>
                       {footnote ? (
-                        <div className="text-[10px] italic text-text-muted mt-0.5">
+                        <div className="text-[10px] italic text-muted-foreground mt-0.5">
                           {footnote}
                         </div>
                       ) : null}
@@ -157,13 +152,10 @@ export async function TopBridges({ since, excludeBridge }: Props) {
                       {b.netUsd >= 0 ? "+" : ""}
                       {formatUsd(b.netUsd)}
                     </td>
-                    <td className="py-2.5 text-right num text-text-secondary">
-                      {formatUsd(b.avgTicketUsd)}
-                    </td>
-                    <td className="py-2.5 text-right num text-text-secondary">
+                    <td className="py-2.5 text-right num text-muted-foreground">
                       {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : "—"}
                     </td>
-                    <td className="py-2.5 text-right num text-text-secondary">
+                    <td className="py-2.5 text-right num text-muted-foreground">
                       {formatNumber(b.inflowCount + b.outflowCount)}
                     </td>
                   </tr>

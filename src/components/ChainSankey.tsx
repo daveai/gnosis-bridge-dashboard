@@ -159,10 +159,10 @@ export async function ChainSankey({ since, excludeBridge }: Props) {
 
   return (
     <section>
-      <SectionHeader eyebrow="Chain flows">
+      <SectionHeader eyebrow="Source and destination chains">
         <InlineHideOmniToggle />
       </SectionHeader>
-      <div className="bg-surface-card border border-border rounded-lg p-5">
+      <div>
         {unavailable ? (
           <Unavailable />
         ) : empty ? (

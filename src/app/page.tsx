@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HeroKpis } from "@/components/HeroKpis";
+import { Wordmark } from "@/components/Wordmark";
 import { EditorialHeadline } from "@/components/EditorialHeadline";
 import { TopBridges } from "@/components/TopBridges";
 import { VolumeOverTime } from "@/components/VolumeOverTime";
@@ -24,18 +24,18 @@ function computeSince(period: Period): string | undefined {
 }
 
 function PanelSkeleton({ height = "h-48" }: { height?: string }) {
-  return <div className={`bg-surface-card border border-border rounded-lg ${height}`} />;
+  return <div className={`bg-muted/40 ${height} animate-pulse rounded-sm`} />;
 }
 
 function HeroSkeleton() {
   return (
-    <div className="grid lg:grid-cols-5 gap-4">
-      <div className="lg:col-span-3 bg-surface-card border border-border rounded-lg h-48" />
-      <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-        <div className="bg-surface-card border border-border rounded-lg h-[92px]" />
-        <div className="bg-surface-card border border-border rounded-lg h-[92px]" />
-        <div className="bg-surface-card border border-border rounded-lg h-[92px]" />
-        <div className="bg-surface-card border border-border rounded-lg h-[92px]" />
+    <div className="grid lg:grid-cols-5 gap-8">
+      <div className="lg:col-span-3 bg-muted/40 h-40 animate-pulse rounded-sm" />
+      <div className="lg:col-span-2 grid grid-cols-2 gap-x-8 gap-y-6">
+        <div className="bg-muted/40 h-12 animate-pulse rounded-sm" />
+        <div className="bg-muted/40 h-12 animate-pulse rounded-sm" />
+        <div className="bg-muted/40 h-12 animate-pulse rounded-sm" />
+        <div className="bg-muted/40 h-12 animate-pulse rounded-sm" />
       </div>
     </div>
   );
@@ -43,24 +43,20 @@ function HeroSkeleton() {
 
 function GridSkeleton() {
   return (
-    <div className="bg-surface-card border border-border rounded-lg p-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="border border-border rounded-md h-[120px]" />
-        ))}
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="h-[100px] bg-muted/40 animate-pulse rounded-sm" />
+      ))}
     </div>
   );
 }
 
 function TableSkeleton() {
   return (
-    <div className="bg-surface-card border border-border rounded-lg p-5">
-      <div className="space-y-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-7 border-b border-border/40" />
-        ))}
-      </div>
+    <div className="space-y-2">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="h-7 border-b border-border/40" />
+      ))}
     </div>
   );
 }
@@ -77,27 +73,21 @@ export default async function Home({
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border px-6 py-4 flex items-center justify-between">
+      <header className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 pt-8 pb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image
-            src="/logos/noca-wordmark-white.svg"
-            alt="Noca"
-            width={80}
-            height={22}
-            priority
-          />
-          <span className="text-text-muted text-sm">/</span>
-          <span className="text-text-secondary text-sm font-medium">Gnosis Bridges</span>
+          <Wordmark className="h-[22px] w-auto text-foreground" />
+          <span className="text-muted-foreground text-sm">/</span>
+          <span className="text-foreground text-sm">Gnosis Bridges</span>
         </div>
         <div className="flex items-center gap-4">
-          <Suspense fallback={<span className="text-text-muted text-xs">…</span>}>
+          <Suspense fallback={<span className="text-muted-foreground text-xs">…</span>}>
             <IndexerHead />
           </Suspense>
           <PeriodSelector />
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-10">
+      <main className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 pb-12 space-y-12">
         <ErrorBoundary>
           <Suspense fallback={<div className="h-7" />}>
             <EditorialHeadline since={since} period={period} />
@@ -154,10 +144,6 @@ export default async function Home({
         </ErrorBoundary>
 
         <MethodologyFooter />
-
-        <footer className="text-center text-text-muted text-xs pt-4 pb-8">
-          Gnosis Chain Bridge Analytics — Powered by Envio
-        </footer>
       </main>
     </div>
   );

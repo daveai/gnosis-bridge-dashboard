@@ -7,9 +7,12 @@ interface Props {
 
 export function SectionHeader({ eyebrow, children }: Props) {
   return (
-    <div className="flex items-baseline justify-between mb-4">
-      <h2 className="section-eyebrow">{eyebrow}</h2>
-      {children ? <div className="flex items-center gap-3">{children}</div> : null}
-    </div>
+    <>
+      <div className="flex items-start justify-between gap-4 pb-2">
+        <h2 className="section-eyebrow">{eyebrow}</h2>
+        {children ? <div className="shrink-0 flex items-center gap-3">{children}</div> : null}
+      </div>
+      <hr className="section-rule" />
+    </>
   );
 }

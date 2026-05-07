@@ -66,12 +66,10 @@ export async function VolumeOverTime({ since, excludeBridge }: Props) {
   if (!result.ok) {
     return (
       <section>
-        <SectionHeader eyebrow="Volume by bridge">
+        <SectionHeader eyebrow="Daily volume">
           <InlineHideOmniToggle />
         </SectionHeader>
-        <div className="bg-surface-card border border-border rounded-lg p-5">
-          <Unavailable />
-        </div>
+        <Unavailable />
       </section>
     );
   }
@@ -94,67 +92,39 @@ export async function VolumeOverTime({ since, excludeBridge }: Props) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, v]) => ({ date, ...v }));
 
-  const cols = 4;
-  const rows = Math.ceil(ordered.length / cols);
-  const rowYMax: number[] = [];
-  for (let r = 0; r < rows; r++) {
-    const slice = ordered.slice(r * cols, (r + 1) * cols);
-    let max = 0;
-    for (const s of slice) {
-      for (const d of s.series) {
-        max = Math.max(max, d.inflow, d.outflow);
-      }
-    }
-    rowYMax[r] = max || 1;
+  // Single global yMax keeps every cell on the same scale so cross-bridge
+  // comparison is honest; per-row scaling silently broke that.
+  let globalYMax = 0;
+  for (const s of ordered) {
+    for (const d of s.series) globalYMax = Math.max(globalYMax, d.inflow, d.outflow);
   }
+  globalYMax = globalYMax || 1;
 
   return (
     <section>
-      <SectionHeader eyebrow="Volume by bridge">
+      <SectionHeader eyebrow="Daily volume">
         <InlineHideOmniToggle />
       </SectionHeader>
-      <div className="bg-surface-card border border-border rounded-lg p-5 mb-3">
-        <div className="flex items-baseline justify-between mb-2">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-text-muted">
-            Daily totals
-          </p>
-          <p className="text-[11px] text-text-muted flex gap-3">
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-2 h-px" style={{ backgroundColor: "#105F7C", borderTop: "2px solid #105F7C" }} />
-              Inflow
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-2 h-px" style={{ backgroundColor: "#FF8566", borderTop: "2px solid #FF8566" }} />
-              Outflow
-            </span>
-          </p>
-        </div>
+      <div className="mb-6">
+        <p className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-2">
+          Daily totals
+        </p>
         <TotalsStrip data={totalsRows} />
       </div>
-      <div className="bg-surface-card border border-border rounded-lg p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {ordered.map((s, idx) => {
-            const rowIdx = Math.floor(idx / cols);
-            const yMax = rowYMax[rowIdx];
-            return (
-              <div
-                key={s.bridge}
-                className="border border-border rounded-md p-3 hover:bg-surface-raised transition-colors"
-                style={{ minHeight: 120 }}
-              >
-                <div className="flex items-baseline justify-between mb-1">
-                  <p className="text-[11px] text-text-primary truncate pr-2">
-                    {bridgeDisplayName(s.bridge)}
-                  </p>
-                  <p className="text-[11px] num text-text-muted">
-                    {formatUsd(s.total)}
-                  </p>
-                </div>
-                <SmallMultipleSpark data={s.series} yMax={yMax} />
-              </div>
-            );
-          })}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+        {ordered.map((s) => (
+          <div key={s.bridge} style={{ minHeight: 100 }}>
+            <div className="flex items-baseline justify-between mb-1">
+              <p className="text-xs text-foreground truncate pr-2">
+                {bridgeDisplayName(s.bridge)}
+              </p>
+              <p className="text-[11px] num text-muted-foreground">
+                {formatUsd(s.total)}
+              </p>
+            </div>
+            <SmallMultipleSpark data={s.series} yMax={globalYMax} />
+          </div>
+        ))}
       </div>
     </section>
   );

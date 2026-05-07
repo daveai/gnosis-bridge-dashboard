@@ -113,7 +113,4 @@ export const ALL_BRIDGES = [
 
 export const TOTAL_CONFIGURED_BRIDGES = 13;
 
-export const BRIDGE_FOOTNOTES: Record<string, string> = {
-  bungee: "NOCA counterparty exposure",
-  "bungee-v2": "NOCA counterparty exposure",
-};
+export const BRIDGE_FOOTNOTES: Record<string, string> = {};
