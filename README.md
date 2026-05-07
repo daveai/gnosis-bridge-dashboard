@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bridges Dashboard
 
-## Getting Started
+Bridge volume analytics for Gnosis Chain. Vite + React 19 + TanStack Query + Tailwind v4.
 
-First, run the development server:
+## Stack
+
+- Vite 8 + Bun
+- React 19, react-router-dom
+- TanStack Query v5 with persisted localStorage cache (`bridges-query-cache`)
+- Tailwind CSS v4 via `@tailwindcss/vite`
+- Recharts for charts
+- Biome for lint/format
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run dev    # http://localhost:5173
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The dashboard reads bridge data over GraphQL. Set the endpoint in `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+VITE_GRAPHQL_ENDPOINT=http://localhost:8080/v1/graphql
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The default already points at a local Hasura/Envio indexer on port 8080. See `.env.example`.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `bun run dev` — Vite dev server on `:5173`
+- `bun run build` — production build to `dist/`
+- `bun run preview` — preview the production build
+- `bun run typecheck` — `tsc --noEmit`
+- `bun run lint` — `biome lint .`
+- `bun run format` — `biome format --write .`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## URL state
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `?period=7d|30d|all` — time window (default `all`)
+- `?hideOmni=1` — exclude the legacy Omnibridge
 
-## Deploy on Vercel
+## Data model
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+GraphQL endpoint returns the indexer schema. See `src/lib/types.ts` for the
+shapes consumed (`BridgeDailyStats`, `BridgeTokenDailyStats`, `ChainPairStats`,
+`TokenStats`, `BridgeTransfer`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Each section has a hook in `src/hooks/queryHooks.ts` that wraps `useQuery`.
+Components render skeletons while loading and an "unavailable" notice on error.
