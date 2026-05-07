@@ -67,12 +67,15 @@ export function bridgeDisplayName(bridge: string): string {
   return names[bridge] || bridge
 }
 
-// USDC and USDC.e are 1:1 fungible on Gnosis via the official transmuter, so
-// we collapse them into a single "USDC" row in cross-token aggregations.
+// Treat 1:1 fungible representations of the same underlying asset as one row
+// in cross-token aggregations: USDC and USDC.e via the Gnosis transmuter, and
+// xDAI / wxDAI / DAI / USDS as the same Maker/Sky stablecoin pre- and post-
+// migration on either chain.
 export function canonicalTokenSymbol(symbol: string | null | undefined): string {
   if (!symbol) return 'Unknown'
   const s = symbol.toUpperCase()
   if (s === 'USDC.E') return 'USDC'
+  if (s === 'XDAI' || s === 'WXDAI' || s === 'USDS') return 'DAI'
   return symbol
 }
 
