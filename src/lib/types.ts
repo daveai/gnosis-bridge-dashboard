@@ -111,7 +111,7 @@ export const ALL_BRIDGES = [
   "relay",
 ] as const;
 
-export const TOTAL_CONFIGURED_BRIDGES = 12;
+export const TOTAL_CONFIGURED_BRIDGES = 13;
 
 export const BRIDGE_FOOTNOTES: Record<string, string> = {
   bungee: "NOCA counterparty exposure",
