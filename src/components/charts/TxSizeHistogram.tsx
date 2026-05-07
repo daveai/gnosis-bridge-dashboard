@@ -1,10 +1,8 @@
-"use client";
-
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts'
 
 interface Props {
-  bins: { bin: string; count: number; lower: number; upper: number }[];
-  globalMedianLog: number | null;
+  bins: { bin: string; count: number; lower: number; upper: number }[]
+  globalMedianLog: number | null
 }
 
 export function TxSizeHistogram({ bins, globalMedianLog }: Props) {
@@ -13,7 +11,7 @@ export function TxSizeHistogram({ bins, globalMedianLog }: Props) {
       <div className="h-[64px] flex items-center justify-center text-text-muted text-[11px]">
         No flow
       </div>
-    );
+    )
   }
   return (
     <ResponsiveContainer width="100%" height={64}>
@@ -21,10 +19,20 @@ export function TxSizeHistogram({ bins, globalMedianLog }: Props) {
         <XAxis dataKey="bin" hide />
         <YAxis hide />
         {globalMedianLog != null ? (
-          <ReferenceLine x={Math.round(globalMedianLog)} stroke="var(--color-foreground)" strokeOpacity={0.35} strokeDasharray="2 2" />
+          <ReferenceLine
+            x={Math.round(globalMedianLog)}
+            stroke="var(--color-foreground)"
+            strokeOpacity={0.35}
+            strokeDasharray="2 2"
+          />
         ) : null}
-        <Bar dataKey="count" fill="var(--color-petrol-light)" radius={[1, 1, 0, 0]} isAnimationActive={false} />
+        <Bar
+          dataKey="count"
+          fill="var(--color-petrol-light)"
+          radius={[1, 1, 0, 0]}
+          isAnimationActive={false}
+        />
       </BarChart>
     </ResponsiveContainer>
-  );
+  )
 }

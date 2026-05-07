@@ -1,27 +1,34 @@
-"use client";
-
-import { Sankey, Tooltip, Layer, Rectangle } from "recharts";
-import { formatUsd } from "@/lib/format";
+import { Sankey, Tooltip, Layer, Rectangle } from 'recharts'
+import { formatUsd } from '@/lib/format'
 
 interface ChainFlow {
-  chainName: string;
-  volume: number;
-  count: number;
+  chainName: string
+  volume: number
+  count: number
 }
 
 interface Props {
-  inflows: ChainFlow[];
-  outflows: ChainFlow[];
+  inflows: ChainFlow[]
+  outflows: ChainFlow[]
 }
 
-const INFLOW_COLOR = "color-mix(in oklch, var(--color-inflow) 55%, transparent)";
-const OUTFLOW_COLOR = "color-mix(in oklch, var(--color-outflow) 55%, transparent)";
-const NODE_COLOR = "var(--color-muted-foreground)";
-const GNOSIS_COLOR = "var(--color-petrol-light)";
+const INFLOW_COLOR = 'color-mix(in oklch, var(--color-inflow) 55%, transparent)'
+const OUTFLOW_COLOR = 'color-mix(in oklch, var(--color-outflow) 55%, transparent)'
+const NODE_COLOR = 'var(--color-muted-foreground)'
+const GNOSIS_COLOR = 'var(--color-petrol-light)'
 
-function CustomNode({ x, y, width, height, payload, chartWidth }: any) {
-  const isGnosis = payload.name === "Gnosis";
-  const isLeft = x < chartWidth / 2 - 50;
+interface NodeProps {
+  x: number
+  y: number
+  width: number
+  height: number
+  payload: { name: string }
+  chartWidth: number
+}
+
+function CustomNode({ x, y, width, height, payload, chartWidth }: NodeProps) {
+  const isGnosis = payload.name === 'Gnosis'
+  const isLeft = x < chartWidth / 2 - 50
 
   return (
     <Layer>
@@ -36,7 +43,7 @@ function CustomNode({ x, y, width, height, payload, chartWidth }: any) {
       <text
         x={isGnosis ? x + width / 2 : isLeft ? x - 8 : x + width + 8}
         y={y + height / 2}
-        textAnchor={isGnosis ? "middle" : isLeft ? "end" : "start"}
+        textAnchor={isGnosis ? 'middle' : isLeft ? 'end' : 'start'}
         dominantBaseline="central"
         fill="var(--color-foreground)"
         fontSize={12}
@@ -45,7 +52,18 @@ function CustomNode({ x, y, width, height, payload, chartWidth }: any) {
         {payload.name}
       </text>
     </Layer>
-  );
+  )
+}
+
+interface LinkProps {
+  sourceX: number
+  sourceY: number
+  sourceControlX: number
+  targetX: number
+  targetY: number
+  targetControlX: number
+  linkWidth: number
+  payload: { target: { name: string } }
 }
 
 function CustomLink({
@@ -57,9 +75,9 @@ function CustomLink({
   targetControlX,
   linkWidth,
   payload,
-}: any) {
-  const isInflow = payload.target.name === "Gnosis";
-  const color = isInflow ? INFLOW_COLOR : OUTFLOW_COLOR;
+}: LinkProps) {
+  const isInflow = payload.target.name === 'Gnosis'
+  const color = isInflow ? INFLOW_COLOR : OUTFLOW_COLOR
 
   return (
     <Layer>
@@ -79,16 +97,26 @@ function CustomLink({
         strokeWidth={0}
       />
     </Layer>
-  );
+  )
 }
 
-function CustomTooltip({ active, payload }: any) {
-  if (!active || !payload?.length) return null;
-  const data = payload[0]?.payload?.payload;
-  if (!data) return null;
-  const sourceName = data.source?.name ?? "";
-  const targetName = data.target?.name ?? "";
-  const value = data.value ?? 0;
+interface TooltipPayloadEntry {
+  payload?: {
+    payload?: {
+      source?: { name?: string }
+      target?: { name?: string }
+      value?: number
+    }
+  }
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayloadEntry[] }) {
+  if (!active || !payload?.length) return null
+  const data = payload[0]?.payload?.payload
+  if (!data) return null
+  const sourceName = data.source?.name ?? ''
+  const targetName = data.target?.name ?? ''
+  const value = data.value ?? 0
   return (
     <div className="bg-surface-raised border border-border rounded-lg px-3 py-2 text-xs">
       <p className="text-text-primary font-medium">
@@ -96,30 +124,30 @@ function CustomTooltip({ active, payload }: any) {
       </p>
       <p className="text-text-secondary font-mono mt-0.5">{formatUsd(value)}</p>
     </div>
-  );
+  )
 }
 
 export function FlowSankey({ inflows, outflows }: Props) {
   if (inflows.length === 0 && outflows.length === 0) {
-    return <p className="text-text-muted text-sm text-center py-8">No chain flow data</p>;
+    return <p className="text-text-muted text-sm text-center py-8">No chain flow data</p>
   }
 
-  const totalInflow = inflows.reduce((s, f) => s + f.volume, 0);
-  const totalOutflow = outflows.reduce((s, f) => s + f.volume, 0);
+  const totalInflow = inflows.reduce((s, f) => s + f.volume, 0)
+  const totalOutflow = outflows.reduce((s, f) => s + f.volume, 0)
 
-  const inflowNodes = inflows.map((f) => ({ name: f.chainName }));
-  const gnosisIdx = inflowNodes.length;
-  const outflowNodes = outflows.map((f) => ({ name: f.chainName }));
+  const inflowNodes = inflows.map((f) => ({ name: f.chainName }))
+  const gnosisIdx = inflowNodes.length
+  const outflowNodes = outflows.map((f) => ({ name: f.chainName }))
 
-  const nodes = [...inflowNodes, { name: "Gnosis" }, ...outflowNodes];
+  const nodes = [...inflowNodes, { name: 'Gnosis' }, ...outflowNodes]
   const links = [
     ...inflows.map((f, i) => ({ source: i, target: gnosisIdx, value: f.volume })),
     ...outflows.map((f, i) => ({ source: gnosisIdx, target: gnosisIdx + 1 + i, value: f.volume })),
-  ];
+  ]
 
-  const chartWidth = 900;
-  const maxNodes = Math.max(inflows.length, outflows.length);
-  const chartHeight = Math.max(280, maxNodes * 52 + 40);
+  const chartWidth = 900
+  const maxNodes = Math.max(inflows.length, outflows.length)
+  const chartHeight = Math.max(280, maxNodes * 52 + 40)
 
   return (
     <div className="flex flex-col items-center">
@@ -145,12 +173,12 @@ export function FlowSankey({ inflows, outflows }: Props) {
         nodeWidth={10}
         nodePadding={20}
         margin={{ top: 4, right: 130, bottom: 4, left: 130 }}
-        link={<CustomLink />}
-        node={<CustomNode chartWidth={chartWidth} />}
+        link={<CustomLink {...({} as LinkProps)} />}
+        node={<CustomNode {...({} as NodeProps)} chartWidth={chartWidth} />}
         iterations={64}
       >
         <Tooltip content={<CustomTooltip />} />
       </Sankey>
     </div>
-  );
+  )
 }

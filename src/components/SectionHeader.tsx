@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react'
 
 interface Props {
-  eyebrow: string;
-  children?: ReactNode;
+  eyebrow: string
+  children?: ReactNode
 }
 
 export function SectionHeader({ eyebrow, children }: Props) {
@@ -14,5 +14,5 @@ export function SectionHeader({ eyebrow, children }: Props) {
       </div>
       <hr className="section-rule" />
     </>
-  );
+  )
 }

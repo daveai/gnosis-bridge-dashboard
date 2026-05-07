@@ -1,10 +1,8 @@
-"use client";
-
-import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
+import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts'
 
 interface Props {
-  data: { inflow: number; outflow: number }[];
-  yMax: number;
+  data: { inflow: number; outflow: number }[]
+  yMax: number
 }
 
 export function SmallMultipleSpark({ data, yMax }: Props) {
@@ -13,7 +11,7 @@ export function SmallMultipleSpark({ data, yMax }: Props) {
       <div className="h-[64px] flex items-center justify-center text-text-muted text-[11px]">
         No flow
       </div>
-    );
+    )
   }
   return (
     <ResponsiveContainer width="100%" height={64}>
@@ -38,22 +36,36 @@ export function SmallMultipleSpark({ data, yMax }: Props) {
         />
       </LineChart>
     </ResponsiveContainer>
-  );
+  )
 }
 
 interface TotalsProps {
-  data: { date: string; inflow: number; outflow: number }[];
+  data: { date: string; inflow: number; outflow: number }[]
 }
 
 export function TotalsStrip({ data }: TotalsProps) {
-  if (data.length === 0) return null;
+  if (data.length === 0) return null
   return (
     <ResponsiveContainer width="100%" height={80}>
       <LineChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
-        <YAxis hide domain={[0, "dataMax"]} />
-        <Line type="monotone" dataKey="inflow" stroke="var(--color-inflow)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-        <Line type="monotone" dataKey="outflow" stroke="var(--color-outflow)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+        <YAxis hide domain={[0, 'dataMax']} />
+        <Line
+          type="monotone"
+          dataKey="inflow"
+          stroke="var(--color-inflow)"
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="outflow"
+          stroke="var(--color-outflow)"
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+        />
       </LineChart>
     </ResponsiveContainer>
-  );
+  )
 }

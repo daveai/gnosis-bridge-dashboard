@@ -1,112 +1,81 @@
-import { safeGql } from "@/lib/graphql";
-import { formatUsd, formatNumber, canonicalTokenSymbol } from "@/lib/format";
-import type { TokenStats, BridgeTransfer } from "@/lib/types";
-import { SectionHeader } from "./SectionHeader";
-import { Unavailable, EmptyLine } from "./Unavailable";
-
-interface AllTimeResponse {
-  TokenStats: TokenStats[];
-}
-
-interface PeriodResponse {
-  BridgeTransfer: Pick<BridgeTransfer, "tokenSymbol" | "amountUsd"> & { direction: string };
-}
-
-interface PeriodResp {
-  BridgeTransfer: { tokenSymbol: string | null; amountUsd: string | null; direction: string }[];
-}
+import { formatUsd, formatNumber, canonicalTokenSymbol } from '@/lib/format'
+import { useTopTokens } from '@/hooks/queryHooks'
+import { SectionHeader } from './SectionHeader'
+import { Unavailable, EmptyLine } from './Unavailable'
 
 interface TokenRow {
-  symbol: string;
-  inflow: number;
-  outflow: number;
-  net: number;
-  transfers: number;
+  symbol: string
+  inflow: number
+  outflow: number
+  net: number
+  transfers: number
 }
 
 interface Props {
-  since?: string;
-  excludeBridge?: string;
+  since?: string
+  excludeBridge?: string
 }
 
-function aggregateByToken(rows: PeriodResp["BridgeTransfer"]): TokenRow[] {
-  const m = new Map<string, TokenRow>();
+function aggregateByToken(
+  rows: { tokenSymbol: string | null; amountUsd: string | null; direction: string }[],
+): TokenRow[] {
+  const m = new Map<string, TokenRow>()
   for (const tx of rows) {
-    const sym = canonicalTokenSymbol(tx.tokenSymbol);
-    const e = m.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 };
-    const usd = parseFloat(tx.amountUsd || "0");
-    if (tx.direction === "inflow") e.inflow += usd;
-    else e.outflow += usd;
-    e.net = e.inflow - e.outflow;
-    e.transfers++;
-    m.set(sym, e);
+    const sym = canonicalTokenSymbol(tx.tokenSymbol)
+    const e = m.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 }
+    const usd = parseFloat(tx.amountUsd || '0')
+    if (tx.direction === 'inflow') e.inflow += usd
+    else e.outflow += usd
+    e.net = e.inflow - e.outflow
+    e.transfers++
+    m.set(sym, e)
   }
-  return Array.from(m.values()).sort((a, b) => b.transfers - a.transfers).slice(0, 10);
+  return Array.from(m.values())
+    .sort((a, b) => b.transfers - a.transfers)
+    .slice(0, 10)
 }
 
-export async function TopTokens({ since, excludeBridge }: Props) {
-  let tokens: TokenRow[] = [];
-  let unavailable = false;
+export function TopTokens({ since, excludeBridge }: Props) {
+  const { data, isError } = useTopTokens({ since, excludeBridge })
 
-  if (since || excludeBridge) {
-    const cond: string[] = [];
-    if (since) {
-      const sinceTs = Math.floor(new Date(since).getTime() / 1000).toString();
-      cond.push(`timestamp: { _gte: "${sinceTs}" }`);
+  let tokens: TokenRow[] = []
+
+  if (data?.kind === 'period') {
+    tokens = aggregateByToken(data.transfers)
+  } else if (data?.kind === 'all-time') {
+    const merged = new Map<string, TokenRow>()
+    for (const t of data.tokens) {
+      if (!t.symbol) continue
+      const sym = canonicalTokenSymbol(t.symbol)
+      const inflow = parseFloat(t.inflowVolumeUsd) || 0
+      const outflow = parseFloat(t.outflowVolumeUsd) || 0
+      const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 }
+      e.inflow += inflow
+      e.outflow += outflow
+      e.net = e.inflow - e.outflow
+      e.transfers += t.transferCount
+      merged.set(sym, e)
     }
-    if (excludeBridge) cond.push(`bridge: { _neq: "${excludeBridge}" }`);
-    const where = `where: { ${cond.join(", ")} }`;
-    const r = await safeGql<PeriodResp>(`{
-      BridgeTransfer(${where}, limit: 5000) {
-        tokenSymbol
-        amountUsd
-        direction
-      }
-    }`);
-    if (!r.ok) {
-      unavailable = true;
-    } else {
-      tokens = aggregateByToken(r.data.BridgeTransfer);
-    }
-  } else {
-    const r = await safeGql<AllTimeResponse>(`{
-      TokenStats(where: { symbol: { _is_null: false } }, order_by: { transferCount: desc }, limit: 10) {
-        id
-        symbol
-        inflowVolumeUsd
-        outflowVolumeUsd
-        transferCount
-      }
-    }`);
-    if (!r.ok) {
-      unavailable = true;
-    } else {
-      const merged = new Map<string, TokenRow>();
-      for (const t of r.data.TokenStats) {
-        if (!t.symbol) continue;
-        const sym = canonicalTokenSymbol(t.symbol);
-        const inflow = parseFloat(t.inflowVolumeUsd) || 0;
-        const outflow = parseFloat(t.outflowVolumeUsd) || 0;
-        const e = merged.get(sym) || { symbol: sym, inflow: 0, outflow: 0, net: 0, transfers: 0 };
-        e.inflow += inflow;
-        e.outflow += outflow;
-        e.net = e.inflow - e.outflow;
-        e.transfers += t.transferCount;
-        merged.set(sym, e);
-      }
-      tokens = Array.from(merged.values()).sort((a, b) => b.transfers - a.transfers).slice(0, 10);
-    }
+    tokens = Array.from(merged.values())
+      .sort((a, b) => b.transfers - a.transfers)
+      .slice(0, 10)
   }
 
-  const maxAbsNet = tokens.reduce((m, t) => Math.max(m, Math.abs(t.net)), 0) || 1;
-  const totalAbsNet = tokens.reduce((s, t) => s + Math.abs(t.net), 0) || 1;
+  const maxAbsNet = tokens.reduce((m, t) => Math.max(m, Math.abs(t.net)), 0) || 1
+  const totalAbsNet = tokens.reduce((s, t) => s + Math.abs(t.net), 0) || 1
 
   return (
     <section>
       <SectionHeader eyebrow="Tokens" />
       <div className="overflow-x-auto">
-        {unavailable ? (
+        {isError ? (
           <Unavailable />
+        ) : !data ? (
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-7 border-b border-border/40" />
+            ))}
+          </div>
         ) : tokens.length === 0 ? (
           <EmptyLine />
         ) : (
@@ -121,9 +90,9 @@ export async function TopTokens({ since, excludeBridge }: Props) {
             </thead>
             <tbody>
               {tokens.map((t) => {
-                const sharePct = (Math.abs(t.net) / totalAbsNet) * 100;
-                const barPct = (Math.abs(t.net) / maxAbsNet) * 100;
-                const positive = t.net >= 0;
+                const sharePct = (Math.abs(t.net) / totalAbsNet) * 100
+                const barPct = (Math.abs(t.net) / maxAbsNet) * 100
+                const positive = t.net >= 0
                 return (
                   <tr key={t.symbol} className="border-b border-border/50">
                     <td className="py-2.5">
@@ -135,8 +104,11 @@ export async function TopTokens({ since, excludeBridge }: Props) {
                         {t.symbol}
                       </span>
                     </td>
-                    <td className={`py-2.5 text-right num ${positive ? "text-petrol-light" : "text-coral"}`}>
-                      {positive ? "+" : ""}{formatUsd(t.net)}
+                    <td
+                      className={`py-2.5 text-right num ${positive ? 'text-petrol-light' : 'text-coral'}`}
+                    >
+                      {positive ? '+' : ''}
+                      {formatUsd(t.net)}
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
@@ -145,7 +117,9 @@ export async function TopTokens({ since, excludeBridge }: Props) {
                             className="h-full"
                             style={{
                               width: `${barPct}%`,
-                              backgroundColor: positive ? "var(--color-inflow)" : "var(--color-outflow)",
+                              backgroundColor: positive
+                                ? 'var(--color-inflow)'
+                                : 'var(--color-outflow)',
                             }}
                           />
                         </div>
@@ -154,25 +128,27 @@ export async function TopTokens({ since, excludeBridge }: Props) {
                         </span>
                       </div>
                     </td>
-                    <td className="py-2.5 text-right num text-muted-foreground">{formatNumber(t.transfers)}</td>
+                    <td className="py-2.5 text-right num text-muted-foreground">
+                      {formatNumber(t.transfers)}
+                    </td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
         )}
       </div>
     </section>
-  );
+  )
 }
 
 function assetClassColor(symbol: string): string {
-  const s = symbol.toUpperCase();
-  if (["USDC", "USDT", "DAI", "SDAI", "EURE", "GBPE", "USDS", "WXDAI", "XDAI"].includes(s)) {
-    return "var(--color-asset-stable)";
+  const s = symbol.toUpperCase()
+  if (['USDC', 'USDT', 'DAI', 'SDAI', 'EURE', 'GBPE', 'USDS', 'WXDAI', 'XDAI'].includes(s)) {
+    return 'var(--color-asset-stable)'
   }
-  if (s === "GNO") return "var(--color-asset-gno)";
-  if (["WETH", "ETH", "WSTETH"].includes(s)) return "var(--color-asset-eth)";
-  if (["WBTC", "BTC"].includes(s)) return "var(--color-asset-btc)";
-  return "var(--color-asset-other)";
+  if (s === 'GNO') return 'var(--color-asset-gno)'
+  if (['WETH', 'ETH', 'WSTETH'].includes(s)) return 'var(--color-asset-eth)'
+  if (['WBTC', 'BTC'].includes(s)) return 'var(--color-asset-btc)'
+  return 'var(--color-asset-other)'
 }

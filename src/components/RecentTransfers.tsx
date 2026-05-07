@@ -1,33 +1,24 @@
-import { safeGql } from "@/lib/graphql";
-import { formatUsd, formatDate, bridgeDisplayName, shortenTxHash } from "@/lib/format";
-import type { BridgeTransfer } from "@/lib/types";
-import { SectionHeader } from "./SectionHeader";
-import { Unavailable, EmptyLine } from "./Unavailable";
+import { formatUsd, formatDate, bridgeDisplayName, shortenTxHash } from '@/lib/format'
+import { useRecentTransfers } from '@/hooks/queryHooks'
+import { SectionHeader } from './SectionHeader'
+import { Unavailable, EmptyLine } from './Unavailable'
 
-interface Response {
-  BridgeTransfer: BridgeTransfer[];
-}
-
-export async function RecentTransfers() {
-  const result = await safeGql<Response>(`{
-    BridgeTransfer(order_by: { timestamp: desc }, limit: 10) {
-      id
-      bridge
-      direction
-      tokenSymbol
-      amountUsd
-      timestamp
-      txHash
-    }
-  }`);
+export function RecentTransfers() {
+  const { data, isError } = useRecentTransfers()
 
   return (
     <section>
       <SectionHeader eyebrow="Latest transfers" />
       <div className="overflow-x-auto">
-        {!result.ok ? (
+        {isError ? (
           <Unavailable />
-        ) : result.data.BridgeTransfer.length === 0 ? (
+        ) : !data ? (
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-7 border-b border-border/40" />
+            ))}
+          </div>
+        ) : data.length === 0 ? (
           <EmptyLine />
         ) : (
           <table className="w-full text-sm">
@@ -42,17 +33,19 @@ export async function RecentTransfers() {
               </tr>
             </thead>
             <tbody>
-              {result.data.BridgeTransfer.map((tx) => {
-                const inflow = tx.direction === "inflow";
+              {data.map((tx) => {
+                const inflow = tx.direction === 'inflow'
                 return (
                   <tr key={tx.id} className="border-b border-border/50">
                     <td className="py-2.5">{bridgeDisplayName(tx.bridge)}</td>
-                    <td className={`py-2.5 ${inflow ? "text-petrol-light" : "text-coral"}`}>
-                      {inflow ? "Inflow" : "Outflow"}
+                    <td className={`py-2.5 ${inflow ? 'text-petrol-light' : 'text-coral'}`}>
+                      {inflow ? 'Inflow' : 'Outflow'}
                     </td>
-                    <td className="py-2.5 font-mono">{tx.tokenSymbol || "?"}</td>
+                    <td className="py-2.5 font-mono">{tx.tokenSymbol || '?'}</td>
                     <td className="py-2.5 text-right num">{formatUsd(tx.amountUsd)}</td>
-                    <td className="py-2.5 text-right text-muted-foreground">{formatDate(tx.timestamp)}</td>
+                    <td className="py-2.5 text-right text-muted-foreground">
+                      {formatDate(tx.timestamp)}
+                    </td>
                     <td className="py-2.5 text-right">
                       <a
                         href={`https://gnosisscan.io/tx/${tx.txHash}`}
@@ -64,12 +57,12 @@ export async function RecentTransfers() {
                       </a>
                     </td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
         )}
       </div>
     </section>
-  );
+  )
 }

@@ -1,5 +1,5 @@
 interface Props {
-  className?: string;
+  className?: string
 }
 
 export function Wordmark({ className }: Props) {
@@ -29,5 +29,5 @@ export function Wordmark({ className }: Props) {
         fill="currentColor"
       />
     </svg>
-  );
+  )
 }

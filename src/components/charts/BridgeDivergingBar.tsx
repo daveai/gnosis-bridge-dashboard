@@ -1,16 +1,14 @@
-"use client";
-
-import { formatUsd, bridgeDisplayName } from "@/lib/format";
+import { formatUsd, bridgeDisplayName } from '@/lib/format'
 
 interface Row {
-  bridge: string;
-  inflowUsd: number;
-  outflowUsd: number;
-  netUsd: number;
+  bridge: string
+  inflowUsd: number
+  outflowUsd: number
+  netUsd: number
 }
 
 interface Props {
-  data: Row[];
+  data: Row[]
 }
 
 export function BridgeDivergingBar({ data }: Props) {
@@ -19,15 +17,12 @@ export function BridgeDivergingBar({ data }: Props) {
       <div className="flex items-center justify-center py-12 text-text-muted text-sm">
         No bridge activity in this period
       </div>
-    );
+    )
   }
 
-  const max = Math.max(
-    ...data.map((d) => Math.max(d.inflowUsd, d.outflowUsd)),
-    1,
-  );
+  const max = Math.max(...data.map((d) => Math.max(d.inflowUsd, d.outflowUsd)), 1)
 
-  const rowH = 28;
+  const rowH = 28
 
   return (
     <div className="w-full">
@@ -41,14 +36,10 @@ export function BridgeDivergingBar({ data }: Props) {
       </div>
       <div className="space-y-1">
         {data.map((row) => {
-          const inflowPct = (row.inflowUsd / max) * 50;
-          const outflowPct = (row.outflowUsd / max) * 50;
+          const inflowPct = (row.inflowUsd / max) * 50
+          const outflowPct = (row.outflowUsd / max) * 50
           return (
-            <div
-              key={row.bridge}
-              className="flex items-center"
-              style={{ height: rowH }}
-            >
+            <div key={row.bridge} className="flex items-center" style={{ height: rowH }}>
               <div className="w-[120px] flex-shrink-0 text-xs text-text-primary truncate pr-3">
                 {bridgeDisplayName(row.bridge)}
               </div>
@@ -57,26 +48,26 @@ export function BridgeDivergingBar({ data }: Props) {
                 <div className="w-1/2 h-full flex items-center justify-end pr-px">
                   <div
                     title={`Outflow ${formatUsd(row.outflowUsd)}`}
-                    style={{ width: `${outflowPct * 2}%`, backgroundColor: "var(--color-outflow)" }}
+                    style={{ width: `${outflowPct * 2}%`, backgroundColor: 'var(--color-outflow)' }}
                     className="h-4 rounded-l-sm"
                   />
                 </div>
                 <div className="w-1/2 h-full flex items-center pl-px">
                   <div
                     title={`Inflow ${formatUsd(row.inflowUsd)}`}
-                    style={{ width: `${inflowPct * 2}%`, backgroundColor: "var(--color-inflow)" }}
+                    style={{ width: `${inflowPct * 2}%`, backgroundColor: 'var(--color-inflow)' }}
                     className="h-4 rounded-r-sm"
                   />
                 </div>
               </div>
               <div className="w-[80px] flex-shrink-0 pl-3 text-right text-xs num text-text-secondary">
-                {row.netUsd >= 0 ? "+" : ""}
+                {row.netUsd >= 0 ? '+' : ''}
                 {formatUsd(row.netUsd)}
               </div>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }
