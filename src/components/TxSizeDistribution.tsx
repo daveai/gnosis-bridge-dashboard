@@ -83,10 +83,10 @@ export function TxSizeDistribution({ since, excludeBridge }: Props) {
   const bridges = ALL_BRIDGES.filter((b) => b !== excludeBridge)
   const allSizes: number[] = []
   const perBridge = bridges.map((b) => {
-    const rows = data.perBridge.get(b) ?? []
-    const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n) => n > 0)
+    const rows = data.perBridge[b] ?? []
+    const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n: number) => n > 0)
     allSizes.push(...sizes)
-    return { bridge: b, sizes, total: sizes.reduce((s, n) => s + n, 0) }
+    return { bridge: b, sizes, total: sizes.reduce((s: number, n: number) => s + n, 0) }
   })
 
   const { logMin, logMax } = pickRange(allSizes)

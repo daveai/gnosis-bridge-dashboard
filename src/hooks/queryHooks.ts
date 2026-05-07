@@ -184,7 +184,7 @@ export function useEditorialHeadline(params: SectionParams) {
 
 export interface TopBridgesData {
   daily: BridgeDailyStats[]
-  samples: Map<string, { amountUsd: string | null }[]>
+  samples: Record<string, { amountUsd: string | null }[]>
 }
 
 export function useTopBridges(params: SectionParams) {
@@ -215,9 +215,9 @@ export function useTopBridges(params: SectionParams) {
       const sampleP = gqlFetch<AliasedSampleResp>(`{ ${aliasParts.join('\n')} }`, undefined, signal)
 
       const [daily, sample] = await Promise.all([dailyP, sampleP])
-      const samples = new Map<string, { amountUsd: string | null }[]>()
+      const samples: Record<string, { amountUsd: string | null }[]> = {}
       bridges.forEach((b, i) => {
-        samples.set(b, sample[`b${i}`] ?? [])
+        samples[b] = sample[`b${i}`] ?? []
       })
       return { daily: daily.BridgeDailyStats, samples }
     },
@@ -250,7 +250,7 @@ export function useDailyVolume(params: SectionParams) {
 }
 
 export interface TxSizesData {
-  perBridge: Map<string, { amountUsd: string | null }[]>
+  perBridge: Record<string, { amountUsd: string | null }[]>
 }
 
 export function useTxSizes(params: SectionParams) {
@@ -264,9 +264,9 @@ export function useTxSizes(params: SectionParams) {
           `b${i}: BridgeTransfer(where: { ${tsCond.join(', ')}, bridge: { _eq: "${b}" } }, limit: 1000) { amountUsd }`,
       )
       const r = await gqlFetch<AliasedSampleResp>(`{ ${aliasParts.join('\n')} }`, undefined, signal)
-      const perBridge = new Map<string, { amountUsd: string | null }[]>()
+      const perBridge: Record<string, { amountUsd: string | null }[]> = {}
       bridges.forEach((b, i) => {
-        perBridge.set(b, r[`b${i}`] ?? [])
+        perBridge[b] = r[`b${i}`] ?? []
       })
       return { perBridge }
     },

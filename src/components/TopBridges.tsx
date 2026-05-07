@@ -66,7 +66,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
   const bridges = aggregate(data.daily)
 
   for (const b of bridges) {
-    const rows = data.samples.get(b.bridge) ?? []
+    const rows = data.samples[b.bridge] ?? []
     const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n) => n > 0)
     b.medianTicketUsd = median(sizes)
   }
