@@ -1,7 +1,6 @@
-import { formatUsd, formatNumber, bridgeDisplayName, median } from '@/lib/format'
+import { formatUsd, formatNumber, bridgeDisplayName } from '@/lib/format'
 import { type BridgeDailyStats, type BridgeSummary } from '@/lib/types'
 import { useTopBridges } from '@/hooks/queryHooks'
-import { BridgeDivergingBar } from './charts/BridgeDivergingBar'
 import { SectionHeader } from './SectionHeader'
 import { InlineHideOmniToggle } from './PeriodSelector'
 import { Unavailable } from './Unavailable'
@@ -31,11 +30,15 @@ function aggregate(daily: BridgeDailyStats[]): BridgeSummary[] {
     e.outflowCount += d.outflowCount
     e.totalUsd = e.inflowUsd + e.outflowUsd
     e.netUsd = e.inflowUsd - e.outflowUsd
-    const cnt = e.inflowCount + e.outflowCount
-    e.avgTicketUsd = cnt > 0 ? e.totalUsd / cnt : 0
     m.set(d.bridge, e)
   }
-  return Array.from(m.values()).sort((a, b) => Math.abs(b.netUsd) - Math.abs(a.netUsd))
+  // Volume desc — leading column should also be the sort key. Bridges with
+  // zero volume but non-zero tx count (e.g. CCIP OffRamp count-only) sort to
+  // the bottom by transfer count.
+  return Array.from(m.values()).sort((a, b) => {
+    if (b.totalUsd !== a.totalUsd) return b.totalUsd - a.totalUsd
+    return b.inflowCount + b.outflowCount - (a.inflowCount + a.outflowCount)
+  })
 }
 
 export function TopBridges({ since, excludeBridge }: Props) {
@@ -44,7 +47,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
   if (isError) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridge Activity">
+        <SectionHeader eyebrow="Bridges">
           <InlineHideOmniToggle />
         </SectionHeader>
         <Unavailable />
@@ -55,7 +58,7 @@ export function TopBridges({ since, excludeBridge }: Props) {
   if (!data) {
     return (
       <section>
-        <SectionHeader eyebrow="Bridge Activity">
+        <SectionHeader eyebrow="Bridges">
           <InlineHideOmniToggle />
         </SectionHeader>
         <div className="bg-muted/40 h-72 animate-pulse rounded-sm" />
@@ -64,55 +67,80 @@ export function TopBridges({ since, excludeBridge }: Props) {
   }
 
   const bridges = aggregate(data.daily)
-
-  for (const b of bridges) {
-    const rows = data.samples[b.bridge] ?? []
-    const sizes = rows.map((r) => parseFloat(r.amountUsd || '0')).filter((n) => n > 0)
-    b.medianTicketUsd = median(sizes)
-  }
+  const totalVolume = bridges.reduce((s, b) => s + b.totalUsd, 0) || 1
 
   return (
     <section>
-      <SectionHeader eyebrow="Bridge Activity">
+      <SectionHeader eyebrow="Bridges">
         <InlineHideOmniToggle />
       </SectionHeader>
-      <div className="grid lg:grid-cols-2 gap-8">
-        <BridgeDivergingBar data={bridges} />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
-                <th className="text-left pb-3">Bridge</th>
-                <th className="text-right pb-3">Volume</th>
-                <th className="text-right pb-3">Net flow</th>
-                <th className="text-right pb-3">Median ticket</th>
-                <th className="text-right pb-3">Tx count</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bridges.map((b) => (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-muted-foreground text-[10px] uppercase tracking-[0.08em] border-b border-border">
+              <th className="text-left pb-3">Bridge</th>
+              <th className="text-right pb-3">Volume</th>
+              <th className="pb-3 w-[28%]">Share</th>
+              <th className="text-right pb-3">Net flow</th>
+              <th className="text-right pb-3">Transfers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bridges.map((b) => {
+              const sharePct = (b.totalUsd / totalVolume) * 100
+              const countOnly = b.totalUsd === 0 && b.inflowCount + b.outflowCount > 0
+              return (
                 <tr key={b.bridge} className="border-b border-border/50">
-                  <td className="py-2.5">{bridgeDisplayName(b.bridge)}</td>
-                  <td className="py-2.5 text-right num text-muted-foreground">
-                    {formatUsd(b.totalUsd)}
+                  <td className="py-2.5">
+                    {bridgeDisplayName(b.bridge)}
+                    {countOnly ? (
+                      <span className="ml-2 text-[10px] text-muted-foreground">count only</span>
+                    ) : null}
+                  </td>
+                  <td className="py-2.5 text-right num">
+                    {countOnly ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      formatUsd(b.totalUsd)
+                    )}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {countOnly ? null : (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-border rounded-sm overflow-hidden">
+                          <div
+                            className="h-full"
+                            style={{
+                              width: `${Math.max(sharePct, 0.3)}%`,
+                              backgroundColor: 'var(--color-petrol-light)',
+                            }}
+                          />
+                        </div>
+                        <span className="num text-[11px] text-muted-foreground w-[42px] text-right">
+                          {sharePct.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
                   </td>
                   <td
-                    className={`py-2.5 text-right num ${b.netUsd >= 0 ? 'text-petrol-light' : 'text-coral'}`}
+                    className={`py-2.5 text-right num ${
+                      countOnly
+                        ? 'text-muted-foreground'
+                        : b.netUsd >= 0
+                          ? 'text-petrol-light'
+                          : 'text-coral'
+                    }`}
                   >
-                    {b.netUsd >= 0 ? '+' : ''}
-                    {formatUsd(b.netUsd)}
-                  </td>
-                  <td className="py-2.5 text-right num text-muted-foreground">
-                    {b.medianTicketUsd != null ? formatUsd(b.medianTicketUsd) : '—'}
+                    {countOnly ? '—' : `${b.netUsd >= 0 ? '+' : ''}${formatUsd(b.netUsd)}`}
                   </td>
                   <td className="py-2.5 text-right num text-muted-foreground">
                     {formatNumber(b.inflowCount + b.outflowCount)}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   )
